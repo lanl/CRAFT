@@ -1,0 +1,6 @@
+﻿Var,Path,Explanation
+Settings_File,"""C:/Users/345578/Documents/GitHub/CRAFT/Emulator_Fitting_Settings1.csv""",
+SaveName,"""CRAFT_practice_Full""",
+thres,0.1,
+EmulatorDrive,"""C:/Users/345578/Documents/GitHub/CRAFT/data/FATES_outputs/""",
+FATES_samples,"""C:/Users/345578/Documents/GitHub/CRAFT/data/ML_Transfer/LHS.sam.csv""",
