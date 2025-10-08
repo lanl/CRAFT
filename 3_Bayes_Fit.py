@@ -12,15 +12,33 @@ from sklearn.preprocessing import StandardScaler
 import joblib
 from scipy.stats import lognorm
 from scipy.stats import norm
+import os
 
+script_path = os.path.abspath(__file__)
+# Get the directory containing the script
+script_directory = os.path.dirname(script_path)
+# Change the current working directory to the script's directory
+os.chdir(script_directory)
 
 initialpos=45
-
 steps=50000
 adapt_interval=1000
 burnin=100
+Model_List = ["CRAFT_practice_FullGPP","CRAFT_practice_FullH201"]
+Scaler_List = ["CRAFT_practice_FullGPP_Scalar","CRAFT_practice_FullH201_Scalar"]
+Obs_List = ['MonthlyGPP', 'SWC10']
+list1=['MonthlyGPP','SWC10']
+samples=pd.read_csv('Example_Obs_data/LHS.sam.csv')
+obsfile="Example_Obs_data/Syntheticg_Set2_63025.csv"
 
 
+
+
+Emdir = "data/Models/"
+
+
+
+Varset=pd.read_csv("diag/FitOrder.csv")
 def log_prob(regrli,scarlerli,x):
     """
     Calculate the log probability of a given set of parameters.
@@ -76,8 +94,9 @@ def log_prob(regrli,scarlerli,x):
         
         if (Obs_List[i] =="LWPmin")|(Obs_List[i] =="LWPmax"):
             predicty=np.abs(predicty)
-            
-        predicty=obscaler.transform(np.log(predicty).reshape(-1, 1))
+        #print(predicty)    
+        predicty=obscaler.transform(np.log(predicty+0.0001).reshape(-1, 1))
+      
         Frame=pd.concat([ob_set.reset_index(drop=True),pd.Series(predicty.flatten(),name="sim").reset_index(drop=True)],axis=1)
         if (Obs_List[i] =="LWPmin")|(Obs_List[i] =="LWPmax"):
             Frame=Frame.sample(n=169,random_state=55)                    
@@ -271,15 +290,6 @@ def AdaptiveMCMC(par_cov_matrix,steps,adapt_interval,burnin,dim,x_1,benchmark=".
     return(movelog)
 
 
-Emdir = "C:/Users/345578/Documents/GitHub/CRAFT/data/Models/"
-Model_List = ["CRAFT_practice_FullGPP","CRAFT_practice_FullH201"]
-Scaler_List = ["CRAFT_practice_FullGPP_Scalar","CRAFT_practice_FullH201_Scalar"]
-Obs_List = ['MonthlyGPP', 'SWC10']
-
-list1=['MonthlyGPP','SWC10']
-
-samples=pd.read_csv('C:/Users/345578/Desktop/CRAFT_Data/LHS.sam.csv')
-Varset=pd.read_csv("C:/Users/345578/Documents/GitHub/CRAFT/diag/FitOrder.csv")
 Varset=Varset.iloc[:,1].values
 
 indices_to_delete = np.where(Varset == "month")[0]
@@ -293,7 +303,7 @@ samples_scale=scaler_pars.transform(samples_sub)
 Names=pd.concat([pd.Series(samples_sub.columns),pd.Series(["year","month",])])
 Names2=pd.concat([pd.Series(samples_sub.columns),pd.Series(["Year","DOY",])])
 
-Obs_save=pd.read_csv("C:/Users/345578/Documents/GitHub/CRAFT/data/Syntheticg_Set2_63025.csv").iloc[:,1:]
+Obs_save=pd.read_csv(obsfile).iloc[:,1:]
 print(Obs_save)
 Obs_save=Obs_save.dropna()
 Obs_save,obli=CleanScaleObs(Obs_save)

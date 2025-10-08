@@ -54,10 +54,10 @@ def learn(x,y,save,filename):
 Variables=pd.read_csv("C:/Users/345578/Documents/GitHub/CRAFT/Emulator_Fitting_Settings1.csv")
 SaveName="CRAFT_practice_Full"
 thres=.01
-EmulatorDirve="C:/Users/345578/Desktop/CRAFT_Data/FATES_outputs/"
+EmulatorDirve="C:/Users/345578/Documents/GitHub/CRAFT/data/Vars/"
 Downsample=1.0
 
-FATES_samples=pd.read_csv('C:/Users/345578/Desktop/CRAFT_Data/LHS.sam.csv')
+FATES_samples=pd.read_csv('C:/Users/345578/Documents/GitHub/CRAFT/Example_Obs_data/LHS.sam.csv')
 
 ### This is the csv you load in: 
 Full=False
