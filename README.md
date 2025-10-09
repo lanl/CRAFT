@@ -1,4 +1,4 @@
-# CRAFT (Climate Research and Forecasting Tool)
+# CRAFT (Calibration and Rapid-Adoption Forecasting Techniques)
 
 CRAFT is a Python-based project for processing, analyzing, and modeling climate or environmental data. It uses machine learning techniques, specifically Random Forest Regression, to create emulators for various environmental variables such as Gross Primary Production (GPP) and soil water content.
 
