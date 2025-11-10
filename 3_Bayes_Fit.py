@@ -74,35 +74,23 @@ def log_prob(regrli,scarlerli,x):
         obscaler = obli[Obs_List[i]]
         
         ob_set = Obs_save[Obs_save["Set"] == Obs_List[i]]
-        # Dynamically check for columns
-        if set(["Year", "DOY"]).issubset(ob_set.columns):
-            my = ob_set[["Year", "DOY"]].reset_index(drop=True)
-            ob_set = ob_set.sort_values(["Year", "DOY"])
+        # Dynamically check for column
+        if (Obs_List[i] =="LWPmin")|(Obs_List[i] =="LWPmax"):
+            my = ob_set[["year", "DOY"]].reset_index(drop=True)
+            my["Year"] = my["year"]
+            my = my[["Year", "DOY"]]
+            ob_set = ob_set.sort_values(["year", "DOY"])
             x_1_run_set = pd.concat([pd.concat([x] * len(my)).reset_index(), my], axis=1)
             one = x_1_run_set.iloc[:, 1:].sort_values(["Year", "DOY"])
             one = one.set_axis(Names2, axis=1)
-        elif set(["year", "DOY"]).issubset(ob_set.columns):
-            my = ob_set[["year", "DOY"]].reset_index(drop=True)
-            ob_set = ob_set.sort_values(["year", "DOY"])
-            x_1_run_set = pd.concat([pd.concat([x] * len(my)).reset_index(), my], axis=1)
-            one = x_1_run_set.iloc[:, 1:].sort_values(["year", "DOY"])
-            one = one.set_axis(Names2, axis=1)
-        elif set(["Year", "Month"]).issubset(ob_set.columns):
-            my = ob_set[["Year", "Month"]].reset_index(drop=True)
-            ob_set = ob_set.sort_values(["Year", "Month"])
-            x_1_run_set = pd.concat([pd.concat([x] * len(my)).reset_index(), my], axis=1)
-            one = x_1_run_set.iloc[:, 1:].sort_values(["Year", "Month"])
-            one = one[Varset]
-        elif set(["year", "month"]).issubset(ob_set.columns):
+        else: 
             my = ob_set[["year", "month"]].reset_index(drop=True)
             ob_set = ob_set.sort_values(["year", "month"])
             x_1_run_set = pd.concat([pd.concat([x] * len(my)).reset_index(), my], axis=1)
             one = x_1_run_set.iloc[:, 1:].sort_values(["year", "month"])
-            one = one[Varset]
-        else:
-            # Fallback: just use x as is
-            one = pd.DataFrame(x)
-            
+            one=one[Varset]
+            #print(one)
+           # one = one.set_axis(Names, axis=1)            
         one= scaler.transform(one)
         predicty=regr.predict(one)
         #print(one)
