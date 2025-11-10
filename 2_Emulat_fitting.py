@@ -51,8 +51,8 @@ def learn(x,y,save,filename):
         joblib.dump(scaler, "data/Models/"+filename+ "_Scalar.joblib") 
     return(X_train, X_test, y_train, y_test,regr)
 
-Variables=pd.read_csv("Emulator_Fitting_Settings1.csv")
-Meta=pd.read_csv("Emulator_Meta.csv").reset_index()
+Variables=pd.read_csv("Emulator_Settings_v1.csv")
+Meta=pd.read_csv("Emulator_Metadata_v1.csv").reset_index()
 
 SaveName=Meta.loc[Meta["Var"]=='SaveName']['Path'].values[0]
 print(SaveName)

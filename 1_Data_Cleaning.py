@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import os.path
 
 
-lu=pd.read_csv("Cleaning_meta.csv")
+lu=pd.read_csv("Cleaning_Metadata_v1.csv")
 print(lu)
 DRIVE1=lu["DRIVE"][0]
 print(DRIVE1)

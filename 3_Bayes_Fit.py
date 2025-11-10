@@ -21,7 +21,7 @@ script_directory = os.path.dirname(script_path)
 os.chdir(script_directory)
 
 # Load settings from CSV file
-Settings = pd.read_csv('Bayes_settings.csv', index_col='parameter')
+Settings = pd.read_csv('Bayes_Settings_v1.csv', index_col='parameter')
 
 initialpos = int(Settings.loc['initialpos', 'value'])
 steps = int(Settings.loc['steps', 'value'])

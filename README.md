@@ -53,7 +53,81 @@ pip install -r requirements.txt
 
 ## Configuration
 
-The `Emulator_Fitting_Settings1.csv` file contains configuration settings for the emulator fitting process. Modify this file to adjust the variables being modeled, their input files, and scaling factors.
+The project uses four main configuration files:
+
+- `Cleaning_meta.csv`: Contains settings for the data cleaning process.
+- `Emulator_Fitting_Settings1.csv`: Contains settings for the emulator fitting process.
+- `Emulator_Meta.csv`: Provides metadata for the emulator process.
+- `Bayes_settings.csv`: Contains settings for the Bayesian inference process.
+
+Modify these files to adjust the variables being modeled, their input files, and other configuration parameters.
+
+## Configuration Files
+
+### 1. Cleaning_meta.csv (Proposed: Cleaning_Metadata_v1.csv)
+
+Purpose: Contains settings for the data cleaning process.
+Related Script: 1_Data_Cleaning.py
+
+Key Fields:
+- DRIVE: Directory containing input data
+- CASE: Name of the case being processed
+- N_runs: Number of runs to process
+- Varlist: List of variables to be cleaned
+- Parameter_loc: Location of parameter file
+
+### 2. Emulator_Fitting_Settings1.csv (Proposed: Emulator_Settings_v1.csv)
+
+Purpose: Contains settings for the emulator fitting process.
+Related Script: 2_Emulat_fitting.py
+
+Key Fields:
+- var_name: Name of the variable being modeled (e.g., GPP)
+- FATESruns: Input file for the variable data
+- xs, xe: Start and end indices for data selection
+- y_i: Index of the target variable
+- Scaler: Scaling factor for the variable
+
+### 3. Emulator_Meta.csv (Proposed: Emulator_Metadata_v1.csv)
+
+Purpose: Provides metadata for the emulator process.
+Related Scripts: 2_Emulat_fitting.py, 3_Bayes_Fit.py
+
+Key Fields:
+- Settings_File: Name of the emulator settings file
+- SaveName: Name for saving output files
+- thres: Threshold value (purpose to be clarified)
+- EmulatorDrive: Directory for emulator data
+- FATES_samples: Input file for FATES samples
+
+### 4. Bayes_settings.csv (Proposed: Bayes_Settings_v1.csv)
+
+Purpose: Contains settings for the Bayesian inference process.
+Related Script: 3_Bayes_Fit.py
+
+Key Fields:
+- initialpos: Initial position for the MCMC algorithm
+- steps: Number of MCMC steps
+- adapt_interval: Adaptation interval for the MCMC algorithm
+- burnin: Number of burn-in steps
+- Model_List: List of models to use
+- Scaler_List: List of scalers to use
+- Obs_List: List of observations to use
+- list1: Additional list of parameters (purpose to be clarified)
+- samples_file: File containing samples for the MCMC process
+- obsfile: File containing observation data
+
+To maintain consistency and clarity, we propose the following naming convention for these configuration files:
+
+[Process]_[Purpose]_[Version].csv
+
+For example:
+- Cleaning_Metadata_v1.csv
+- Emulator_Settings_v1.csv
+- Emulator_Metadata_v1.csv
+- Bayes_Settings_v1.csv
+
+This naming convention clearly indicates the process, purpose, and version of each configuration file.
 
 ## Output
 
