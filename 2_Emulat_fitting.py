@@ -51,16 +51,22 @@ def learn(x,y,save,filename):
         joblib.dump(scaler, "data/Models/"+filename+ "_Scalar.joblib") 
     return(X_train, X_test, y_train, y_test,regr)
 
-Variables=pd.read_csv("C:/Users/345578/Documents/GitHub/CRAFT/Emulator_Fitting_Settings1.csv")
-SaveName="CRAFT_practice_Full"
-thres=.01
-EmulatorDirve="C:/Users/345578/Documents/GitHub/CRAFT/data/Vars/"
-Downsample=1.0
+Variables=pd.read_csv("Emulator_Fitting_Settings1.csv")
+Meta=pd.read_csv("Emulator_Meta.csv").reset_index()
 
-FATES_samples=pd.read_csv('C:/Users/345578/Documents/GitHub/CRAFT/Example_Obs_data/LHS.sam.csv')
+SaveName=Meta.loc[Meta["Var"]=='SaveName']['Path'].values[0]
+print(SaveName)
+thres=float(Meta.loc[Meta["Var"]=='thres']['Path'])
+EmulatorDirve=Meta.loc[Meta["Var"]=='EmulatorDrive']['Path'].values[0]
+Downsample=1.0
+Fates_sa=Meta.loc[Meta["Var"]=='FATES_samples']['Path']
+Fates_sa=Fates_sa.values[0]
+
+
+FATES_samples=pd.read_csv(Fates_sa)
 
 ### This is the csv you load in: 
-Full=False
+Full=True
 if Full==True:
     ImportanceDF=pd.DataFrame({})
     for i in list(range(0,len(Variables["xs"]))):

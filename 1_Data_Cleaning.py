@@ -4,19 +4,34 @@ import matplotlib.pyplot as plt
 import os.path
 
 
-DRIVE1='C:/Users/345578/outputs925/outputtest_Teller_Sens_run.IELMFATES/'
-CASENAME="Teller_Sens_run.IELMFATES"
-Nruns=500
-varlist=["Date",'FATES_GPP','H2OSOIvalue1']
-samples=pd.read_csv('C:/Users/345578/Desktop/CRAFT_Data/LHS.sam.csv')
+lu=pd.read_csv("Cleaning_meta.csv")
+print(lu)
+DRIVE1=lu["DRIVE"][0]
+print(DRIVE1)
+
+CASENAME=lu["CASE"][0]
+print(CASENAME)
+varlist=lu["Varlist"].values[0]
+varlist=varlist.split(",")
+print(varlist)
+Nruns=int(lu["N_runs"].values)
+print(Nruns)
+samples=lu["Parameter_loc"].values[0]
+print(samples)
+
+
+#varlist=["Date",'FATES_GPP']
+samples=pd.read_csv(samples)
 
 
 print("Loading in files:")
+print(str(DRIVE1+CASENAME+str(1)+".csv"))
+
 df=pd.DataFrame()
 for i in list(range(0,Nruns)):
-    print(i)
     my_file=DRIVE1+CASENAME+str(i)+".csv"
     if os.path.isfile(my_file):
+        print(i)
         one=pd.read_csv(my_file) 
         one=one[varlist]   
         one['Date']=pd.DatetimeIndex(one["Date"])
@@ -35,7 +50,7 @@ for i in list(range(0,Nruns)):
         two["Model"]=i
         df=pd.concat([df,two])
 
-#print(df)
+print(df)
 print("Writing out variables for training:")
 samples["Model"]=list(range(1,len(samples)+1))
 
