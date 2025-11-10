@@ -19,21 +19,23 @@ script_path = os.path.abspath(__file__)
 script_directory = os.path.dirname(script_path)
 # Change the current working directory to the script's directory
 os.chdir(script_directory)
-#Settings=pd.read_csv('Bayes_setting.csv')
-#print(Settings)
 
-#initialpos=Settings["initialpos"].values[0]
-#print(initialpos)
-initialpos=45
-steps=50000
-adapt_interval=1000
-burnin=100
-Model_List = ["CRAFT_practice_FullGPP"]
-Scaler_List = ["CRAFT_practice_FullGPP_Scalar"]
-Obs_List = ['MonthlyGPP']
-list1=['MonthlyGPP']
-samples=pd.read_csv('LHS.sam.csv')
-obsfile="Example_Obs_data/Syntheticg_Set2_63025.csv"
+# Load settings from CSV file
+Settings = pd.read_csv('Bayes_settings.csv', index_col='parameter')
+
+initialpos = int(Settings.loc['initialpos', 'value'])
+steps = int(Settings.loc['steps', 'value'])
+adapt_interval = int(Settings.loc['adapt_interval', 'value'])
+burnin = int(Settings.loc['burnin', 'value'])
+Model_List = eval(Settings.loc['Model_List', 'value'])
+Scaler_List = eval(Settings.loc['Scaler_List', 'value'])
+Obs_List = eval(Settings.loc['Obs_List', 'value'])
+list1 = eval(Settings.loc['list1', 'value'])
+samples_file = Settings.loc['samples_file', 'value']
+obsfile = Settings.loc['obsfile', 'value']
+
+samples = pd.read_csv(samples_file)
+print(f"Settings loaded from Bayes_settings.csv")
 
 
 
@@ -71,24 +73,35 @@ def log_prob(regrli,scarlerli,x):
         scaler = scarlerli[Scaler_List[i]]
         obscaler = obli[Obs_List[i]]
         
-        ob_set=Obs_save[Obs_save["Set"]==Obs_List[i]]
-        if (Obs_List[i] =="LWPmin")|(Obs_List[i] =="LWPmax"):
-            my = ob_set[["year", "DOY"]].reset_index(drop=True)
-            my["Year"] = my["year"]
-            my = my[["Year", "DOY"]]
-            ob_set = ob_set.sort_values(["year", "DOY"])
+        ob_set = Obs_save[Obs_save["Set"] == Obs_List[i]]
+        # Dynamically check for columns
+        if set(["Year", "DOY"]).issubset(ob_set.columns):
+            my = ob_set[["Year", "DOY"]].reset_index(drop=True)
+            ob_set = ob_set.sort_values(["Year", "DOY"])
             x_1_run_set = pd.concat([pd.concat([x] * len(my)).reset_index(), my], axis=1)
             one = x_1_run_set.iloc[:, 1:].sort_values(["Year", "DOY"])
             one = one.set_axis(Names2, axis=1)
-        else: 
+        elif set(["year", "DOY"]).issubset(ob_set.columns):
+            my = ob_set[["year", "DOY"]].reset_index(drop=True)
+            ob_set = ob_set.sort_values(["year", "DOY"])
+            x_1_run_set = pd.concat([pd.concat([x] * len(my)).reset_index(), my], axis=1)
+            one = x_1_run_set.iloc[:, 1:].sort_values(["year", "DOY"])
+            one = one.set_axis(Names2, axis=1)
+        elif set(["Year", "Month"]).issubset(ob_set.columns):
+            my = ob_set[["Year", "Month"]].reset_index(drop=True)
+            ob_set = ob_set.sort_values(["Year", "Month"])
+            x_1_run_set = pd.concat([pd.concat([x] * len(my)).reset_index(), my], axis=1)
+            one = x_1_run_set.iloc[:, 1:].sort_values(["Year", "Month"])
+            one = one[Varset]
+        elif set(["year", "month"]).issubset(ob_set.columns):
             my = ob_set[["year", "month"]].reset_index(drop=True)
             ob_set = ob_set.sort_values(["year", "month"])
             x_1_run_set = pd.concat([pd.concat([x] * len(my)).reset_index(), my], axis=1)
             one = x_1_run_set.iloc[:, 1:].sort_values(["year", "month"])
-            
-            one=one[Varset]
-            #print(one)
-           # one = one.set_axis(Names, axis=1)
+            one = one[Varset]
+        else:
+            # Fallback: just use x as is
+            one = pd.DataFrame(x)
             
         one= scaler.transform(one)
         predicty=regr.predict(one)
@@ -178,29 +191,16 @@ def CleanScaleObs(Obs_save):
     Obs_save["month"]=Obs_save["Date"].dt.month
     Obs_save["DOY"]=Obs_save["Date"].dt.dayofyear
 
-    #### Create scaler and scale and scale
-    GPP_obsscale=StandardScaler().fit(np.log(np.abs(np.array(Obs_save.loc[Obs_save["Set"]==list1[0],'obs']))).reshape(-1, 1))
-    #ET_obsscale=StandardScaler().fit(np.log(np.abs(np.array(Obs_save.loc[Obs_save["Set"]==list1[1],'obs']))).reshape(-1, 1))
-    #SWC_obsscale=StandardScaler().fit(np.log(np.abs(np.array(Obs_save.loc[Obs_save["Set"]==list1[1],'obs']))).reshape(-1, 1))
-    #SWC_obsscale=StandardScaler().fit(np.log(np.abs(np.array(Obs_save.loc[Obs_save["Set"]==list1[2],'obs']))).reshape(-1, 1))
-    #Min_obsscale=StandardScaler().fit(np.log(np.abs(np.array(Obs_save.loc[Obs_save["Set"]==list1[6],'obs']+0.0001))).reshape(-1, 1))
-    #Max_obsscale=StandardScaler().fit(np.log(np.abs(np.array(Obs_save.loc[Obs_save["Set"]==list1[7],'obs']+0.0001))).reshape(-1, 1))
-    Obs_save.loc[Obs_save["Set"]==list1[0],'obs']=GPP_obsscale.transform(np.log(np.array(Obs_save.loc[Obs_save["Set"]==list1[0],'obs']).reshape(-1, 1)))
-    #Obs_save.loc[Obs_save["Set"]==list1[1],'obs']=ET_obsscale.transform(np.log(np.array(Obs_save.loc[Obs_save["Set"]==list1[1],'obs']).reshape(-1, 1)))
-    #Obs_save.loc[Obs_save["Set"]==list1[1],'obs']=SWC_obsscale.transform(np.log(np.array(Obs_save.loc[Obs_save["Set"]==list1[1],'obs']).reshape(-1, 1)))
-    #Obs_save.loc[Obs_save["Set"]==list1[5],'obs']=ET_obsscale.transform(np.log(np.array(Obs_save.loc[Obs_save["Set"]==list1[5],'obs']).reshape(-1, 1)))
-    #Obs_save.loc[Obs_save["Set"]==list1[6],'obs']=Min_obsscale.transform(np.log(np.abs(np.array(Obs_save.loc[Obs_save["Set"]==list1[6],'obs']+0.0001))).reshape(-1, 1))
-    #Obs_save.loc[Obs_save["Set"]==list1[7],'obs']=Max_obsscale.transform(np.log(np.abs(np.array(Obs_save.loc[Obs_save["Set"]==list1[7],'obs']+0.0001))).reshape(-1, 1))
-    
-    Obi = ['MonthlyGPP']
-    obli={}
-    obli[Obi[0]]=GPP_obsscale
-    #obli[Obi[1]]=ET_obsscale
-    #obli[Obi[1]]=SWC_obsscale
-    #obli[Obi[3]]=Max_obsscale
-    #obli[Obi[4]]=Min_obsscale
-    #obli[Obi[5]]=RO_obsscale
-    
+    #### Dynamically create scalers and scale for all variables in list1
+    obli = {}
+    for var in list1:
+        # Handle possible zeros or negatives for log
+        obs_vals = np.array(Obs_save.loc[Obs_save["Set"]==var, 'obs'])
+        # Add small value to avoid log(0)
+        obs_vals = np.log(np.abs(obs_vals) + 0.0001).reshape(-1, 1)
+        scaler = StandardScaler().fit(obs_vals)
+        Obs_save.loc[Obs_save["Set"]==var, 'obs'] = scaler.transform(obs_vals)
+        obli[var] = scaler
     return(Obs_save, obli)
 
 def TestLL(regrli,scarleri,initialpos=225):
