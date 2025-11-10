@@ -19,26 +19,28 @@ script_path = os.path.abspath(__file__)
 script_directory = os.path.dirname(script_path)
 # Change the current working directory to the script's directory
 os.chdir(script_directory)
+#Settings=pd.read_csv('Bayes_setting.csv')
+#print(Settings)
 
+#initialpos=Settings["initialpos"].values[0]
+#print(initialpos)
 initialpos=45
 steps=50000
 adapt_interval=1000
 burnin=100
 Model_List = ["CRAFT_practice_FullGPP"]
 Scaler_List = ["CRAFT_practice_FullGPP_Scalar"]
-Obs_List = ['MonthlyGPP', 'SWC10']
-list1=['MonthlyGPP','SWC10']
-samples=pd.read_csv('Example_Obs_data/LHS.sam.csv')
+Obs_List = ['MonthlyGPP']
+list1=['MonthlyGPP']
+samples=pd.read_csv('LHS.sam.csv')
 obsfile="Example_Obs_data/Syntheticg_Set2_63025.csv"
 
 
 
 
 Emdir = "data/Models/"
-
-
-
 Varset=pd.read_csv("diag/FitOrder.csv")
+
 def log_prob(regrli,scarlerli,x):
     """
     Calculate the log probability of a given set of parameters.
@@ -179,22 +181,22 @@ def CleanScaleObs(Obs_save):
     #### Create scaler and scale and scale
     GPP_obsscale=StandardScaler().fit(np.log(np.abs(np.array(Obs_save.loc[Obs_save["Set"]==list1[0],'obs']))).reshape(-1, 1))
     #ET_obsscale=StandardScaler().fit(np.log(np.abs(np.array(Obs_save.loc[Obs_save["Set"]==list1[1],'obs']))).reshape(-1, 1))
-    SWC_obsscale=StandardScaler().fit(np.log(np.abs(np.array(Obs_save.loc[Obs_save["Set"]==list1[1],'obs']))).reshape(-1, 1))
+    #SWC_obsscale=StandardScaler().fit(np.log(np.abs(np.array(Obs_save.loc[Obs_save["Set"]==list1[1],'obs']))).reshape(-1, 1))
     #SWC_obsscale=StandardScaler().fit(np.log(np.abs(np.array(Obs_save.loc[Obs_save["Set"]==list1[2],'obs']))).reshape(-1, 1))
     #Min_obsscale=StandardScaler().fit(np.log(np.abs(np.array(Obs_save.loc[Obs_save["Set"]==list1[6],'obs']+0.0001))).reshape(-1, 1))
     #Max_obsscale=StandardScaler().fit(np.log(np.abs(np.array(Obs_save.loc[Obs_save["Set"]==list1[7],'obs']+0.0001))).reshape(-1, 1))
     Obs_save.loc[Obs_save["Set"]==list1[0],'obs']=GPP_obsscale.transform(np.log(np.array(Obs_save.loc[Obs_save["Set"]==list1[0],'obs']).reshape(-1, 1)))
     #Obs_save.loc[Obs_save["Set"]==list1[1],'obs']=ET_obsscale.transform(np.log(np.array(Obs_save.loc[Obs_save["Set"]==list1[1],'obs']).reshape(-1, 1)))
-    Obs_save.loc[Obs_save["Set"]==list1[1],'obs']=SWC_obsscale.transform(np.log(np.array(Obs_save.loc[Obs_save["Set"]==list1[1],'obs']).reshape(-1, 1)))
+    #Obs_save.loc[Obs_save["Set"]==list1[1],'obs']=SWC_obsscale.transform(np.log(np.array(Obs_save.loc[Obs_save["Set"]==list1[1],'obs']).reshape(-1, 1)))
     #Obs_save.loc[Obs_save["Set"]==list1[5],'obs']=ET_obsscale.transform(np.log(np.array(Obs_save.loc[Obs_save["Set"]==list1[5],'obs']).reshape(-1, 1)))
     #Obs_save.loc[Obs_save["Set"]==list1[6],'obs']=Min_obsscale.transform(np.log(np.abs(np.array(Obs_save.loc[Obs_save["Set"]==list1[6],'obs']+0.0001))).reshape(-1, 1))
     #Obs_save.loc[Obs_save["Set"]==list1[7],'obs']=Max_obsscale.transform(np.log(np.abs(np.array(Obs_save.loc[Obs_save["Set"]==list1[7],'obs']+0.0001))).reshape(-1, 1))
     
-    Obi = ['MonthlyGPP', 'SWC10',]
+    Obi = ['MonthlyGPP']
     obli={}
     obli[Obi[0]]=GPP_obsscale
     #obli[Obi[1]]=ET_obsscale
-    obli[Obi[1]]=SWC_obsscale
+    #obli[Obi[1]]=SWC_obsscale
     #obli[Obi[3]]=Max_obsscale
     #obli[Obi[4]]=Min_obsscale
     #obli[Obi[5]]=RO_obsscale
@@ -247,7 +249,7 @@ def AdaptiveMCMC(par_cov_matrix,steps,adapt_interval,burnin,dim,x_1,benchmark=".
                 # Update running sums for mean and covariance calculation
                    #print(accepted_samples_for_adaptation)
                     par_cov_matrix= (np.cov(np.array(accepted_samples_for_adaptation).T))*.5
-                    print(par_cov_matrix)
+                    #print(par_cov_matrix)
                     # Add a small regularization to prevent singular covariance matrix
                     par_cov_matrix += np.eye(dim) * 1e-6
                    
@@ -309,7 +311,7 @@ Obs_save=Obs_save.dropna()
 Obs_save,obli=CleanScaleObs(Obs_save)
 dims=len(Varset2)
 S=np.repeat(1,dims)
-S=[1,1,1,1,1,1,1,1,1,10]
+#S=[1,1,1,1,1,1,1,1,1,10]
 
 LOADIN=True
 if LOADIN==True:
@@ -321,7 +323,8 @@ TestLL(regrli,scarleri,initialpos=111)
 
 
 par_cov_matrix=np.outer(S,S)
-print(par_cov_matrix)
+#print(par_cov_matrix)
+print("Beginning MCMC sampling")
 log=AdaptiveMCMC(par_cov_matrix,
              steps,
              adapt_interval,

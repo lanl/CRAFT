@@ -1,6 +1,6 @@
 ﻿Var,Path,Explanation
 Settings_File,Emulator_Fitting_Settings1.csv,
 SaveName,CRAFT_practice_Full,
-thres,0.1,
+thres,0.01,
 EmulatorDrive,data/Vars/,
 FATES_samples,LHS.sam.csv,
