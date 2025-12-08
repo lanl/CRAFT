@@ -42,9 +42,13 @@ def plotout(regr, X_test, y_test, Title, model_type="rf"):
         # Convert to tensor format for prediction if needed
         if not isinstance(X_test, tf.Tensor):
             X_test_tensor = tf.convert_to_tensor(X_test.astype('float32'))
-            predicty = regr.predict(X_test_tensor).flatten()
+            predicty = regr.predict(X_test_tensor)
         else:
             predicty = regr.predict(X_test)
+        
+        # Ensure predicty is flattened for plotting
+        if hasattr(predicty, "flatten"):
+            predicty = predicty.flatten()
         
         # For neural network, we don't have feature importance directly
         # Instead, we'll just plot the testing set results

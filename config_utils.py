@@ -84,15 +84,59 @@ def get_emulator_settings():
     
     data = []
     for i, var in enumerate(variables):
-        data.append({
-            '': i,
-            'var_name': var.find('var_name').text,
-            'FATESruns': var.find('fates_runs').text,
-            'xs': int(var.find('xs').text),
-            'xe': int(var.find('xe').text),
-            'y_i': int(var.find('y_i').text),
-            'Scaler': float(var.find('scaler').text)
-        })
+        # Check if the values are in list format (wrapped in [])
+        var_name_text = var.find('var_name').text
+        fates_runs_text = var.find('fates_runs').text
+        xs_text = var.find('xs').text
+        xe_text = var.find('xe').text
+        y_i_text = var.find('y_i').text
+        scaler_text = var.find('scaler').text
+        
+        # If the values are in list format, parse them manually
+        if var_name_text.startswith('[') and var_name_text.endswith(']'):
+            try:
+                # Remove brackets and split by comma
+                var_names = [name.strip() for name in var_name_text[1:-1].split(',')]
+                fates_runs = [run.strip() for run in fates_runs_text[1:-1].split(',')]
+                xs_values = [int(x.strip()) for x in xs_text[1:-1].split(',')]
+                xe_values = [int(x.strip()) for x in xe_text[1:-1].split(',')]
+                y_i_values = [int(y.strip()) for y in y_i_text[1:-1].split(',')]
+                scaler_values = [float(s.strip()) for s in scaler_text[1:-1].split(',')]
+                
+                # Create a DataFrame row for each variable in the lists
+                for j in range(len(var_names)):
+                    data.append({
+                        '': len(data),
+                        'var_name': var_names[j],
+                        'FATESruns': fates_runs[j],
+                        'xs': xs_values[j],
+                        'xe': xe_values[j],
+                        'y_i': y_i_values[j],
+                        'Scaler': scaler_values[j]
+                    })
+            except (ValueError, IndexError) as e:
+                print(f"Error parsing list values: {e}")
+                # Fall back to single value format
+                data.append({
+                    '': i,
+                    'var_name': var_name_text,
+                    'FATESruns': fates_runs_text,
+                    'xs': int(xs_text),
+                    'xe': int(xe_text),
+                    'y_i': int(y_i_text),
+                    'Scaler': float(scaler_text)
+                })
+        else:
+            # Handle single value format
+            data.append({
+                '': i,
+                'var_name': var_name_text,
+                'FATESruns': fates_runs_text,
+                'xs': int(xs_text),
+                'xe': int(xe_text),
+                'y_i': int(y_i_text),
+                'Scaler': float(scaler_text)
+            })
     
     return pd.DataFrame(data)
 

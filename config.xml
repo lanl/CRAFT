@@ -2,12 +2,12 @@
 <configuration>
     <!-- Neural Network Configuration (previously nn_config.csv) -->
     <nn_config>
-        <layer_sizes>44,1280,640,640,256,128,64,32,1</layer_sizes>
+        <layer_sizes>44,1280,640,256,128,64,32,1</layer_sizes>
         <activation>relu</activation>
         <optimizer>adam</optimizer>
         <loss>mse</loss>
-        <epochs>5</epochs>
-        <batch_size>1000</batch_size>
+        <epochs>50</epochs>
+        <batch_size>100</batch_size>
     </nn_config>
 
     <!-- Cleaning Metadata (previously Cleaning_Metadata_v1.csv) -->
@@ -33,12 +33,12 @@
     <!-- Emulator Settings (previously Emulator_Settings_v1.csv) -->
     <emulator_settings>
         <variable>
-            <var_name>GPP</var_name>
-            <fates_runs>FATES_GPPforML.csv</fates_runs>
-            <xs>5</xs>
-            <xe>49</xe>
-            <y_i>3</y_i>
-            <scaler>100000000</scaler>
+            <var_name>[GPP,H2OSOIvalue1]</var_name>
+            <fates_runs>[FATES_GPPforML.csv,H2OSOIvalue1forML.csv]</fates_runs>
+            <xs>[5,5]</xs>
+            <xe>[49,49]</xe>
+            <y_i>[3,3]</y_i>
+            <scaler>[100000000,1]</scaler>
         </variable>
         <!-- Additional variables can be added here with the same structure -->
     </emulator_settings>
@@ -46,13 +46,13 @@
     <!-- Bayes Settings (previously Bayes_Settings_v1.csv) -->
     <bayes_settings>
         <initialpos>45</initialpos>
-        <steps>50000</steps>
+        <steps>10000</steps>
         <adapt_interval>1000</adapt_interval>
         <burnin>100</burnin>
-        <model_list>['CRAFT_practice_FullGPP']</model_list>
-        <scaler_list>['CRAFT_practice_FullGPP_Scalar']</scaler_list>
-        <obs_list>['MonthlyGPP']</obs_list>
-        <list1>['MonthlyGPP']</list1>
+        <model_list>['CRAFT_practice_FullGPP','CRAFT_practice_FullH2OSOIvalue1']</model_list>
+        <scaler_list>['CRAFT_practice_FullGPP_Scalar','CRAFT_practice_FullH2OSOIvalue1_Scalar']</scaler_list>
+        <obs_list>['MonthlyGPP','SWC10']</obs_list>
+        <list1>['MonthlyGPP','SWC10']</list1>
         <samples_file>LHS.sam.csv</samples_file>
         <obsfile>Example_Obs_data/Syntheticg_Set2_63025.csv</obsfile>
     </bayes_settings>
