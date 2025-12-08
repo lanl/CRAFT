@@ -1,0 +1,2 @@
+layer_sizes,activation,optimizer,loss,epochs,batch_size
+"44,1280,640,640,256,128,64,32,1",relu,adam,mse,50,1000
