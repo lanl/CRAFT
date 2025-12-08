@@ -2,9 +2,10 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import os.path
+from config_utils import get_cleaning_metadata
 
 
-lu=pd.read_csv("Cleaning_Metadata_v1.csv")
+lu=get_cleaning_metadata()
 print(lu)
 DRIVE1=lu["DRIVE"][0]
 print(DRIVE1)
@@ -30,6 +31,7 @@ print(str(DRIVE1+CASENAME+str(1)+".csv"))
 df=pd.DataFrame()
 for i in list(range(0,Nruns)):
     my_file=DRIVE1+CASENAME+str(i)+".csv"
+    print(my_file)
     if os.path.isfile(my_file):
         print(i)
         one=pd.read_csv(my_file) 

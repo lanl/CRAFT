@@ -14,6 +14,7 @@ from scipy.stats import lognorm
 from scipy.stats import norm
 import os
 import tensorflow as tf
+from config_utils import get_bayes_settings, get_emulator_metadata
 
 script_path = os.path.abspath(__file__)
 # Get the directory containing the script
@@ -21,8 +22,8 @@ script_directory = os.path.dirname(script_path)
 # Change the current working directory to the script's directory
 os.chdir(script_directory)
 
-# Load settings from CSV file
-Settings = pd.read_csv('Bayes_Settings_v1.csv', index_col='parameter')
+# Load settings from XML config file
+Settings = get_bayes_settings()
 
 initialpos = int(Settings.loc['initialpos', 'value'])
 steps = int(Settings.loc['steps', 'value'])
@@ -37,7 +38,7 @@ obsfile = Settings.loc['obsfile', 'value']
 
 # Load model configuration to determine model types
 try:
-    Meta = pd.read_csv("Emulator_Metadata_v1.csv").reset_index()
+    Meta = get_emulator_metadata()
     # Check if model_type is specified in metadata
     model_type = "rf"  # default
     if "model_type" in Meta["Var"].values:
@@ -48,7 +49,7 @@ except:
     print(f"Metadata file not found or doesn't specify model type. Defaulting to Random Forest.")
 
 samples = pd.read_csv(samples_file)
-print(f"Settings loaded from Bayes_settings.csv")
+print(f"Settings loaded from XML configuration")
 
 Emdir = "data/Models/"
 if  model_type == "rf":

@@ -7,6 +7,7 @@ from sklearn.preprocessing import StandardScaler
 import joblib
 import os
 import tensorflow as tf
+from config_utils import get_emulator_metadata, get_emulator_settings, get_nn_config
 
 def plotout(regr, X_test, y_test, Title, model_type="rf"):
     if model_type == "rf":
@@ -41,7 +42,7 @@ def plotout(regr, X_test, y_test, Title, model_type="rf"):
         # Convert to tensor format for prediction if needed
         if not isinstance(X_test, tf.Tensor):
             X_test_tensor = tf.convert_to_tensor(X_test.astype('float32'))
-            predicty = regr.predict(X_test_tensor)
+            predicty = regr.predict(X_test_tensor).flatten()
         else:
             predicty = regr.predict(X_test)
         
@@ -164,8 +165,8 @@ def learn(x, y, save, filename, model_type="rf", nn_config=None):
     return(X_train, X_test, y_train, y_test, regr)
 
 # Load metadata and settings
-Variables = pd.read_csv("Emulator_Settings_v1.csv")
-Meta = pd.read_csv("Emulator_Metadata_v1.csv").reset_index()
+Variables = get_emulator_settings()
+Meta = get_emulator_metadata()
 
 SaveName = Meta.loc[Meta["Var"]=='SaveName']['Path'].values[0]
 print(SaveName)
@@ -182,18 +183,33 @@ if "model_type" in Meta["Var"].values:
 
 # Load neural network configuration if specified
 nn_config = None
-if model_type == "nn" and "nn_config" in Meta["Var"].values:
-    nn_config_path = Meta.loc[Meta["Var"]=='nn_config']['Path'].values[0]
-    if os.path.exists(nn_config_path):
-        nn_config_df = pd.read_csv(nn_config_path)
+if model_type == "nn":
+    try:
+        nn_config_df = get_nn_config()
         nn_config = nn_config_df.iloc[0].to_dict()
-        # Convert layer_sizes from string to list if necessary
+        
+        # Convert layer_sizes from string to list
         if isinstance(nn_config['layer_sizes'], str):
             nn_config['layer_sizes'] = [int(size) for size in nn_config['layer_sizes'].split(',')]
         
-        # Convert numerical values
-        nn_config['batch_size'] = int(nn_config['batch_size'])
-        nn_config['epochs'] = int(nn_config['epochs'])
+        print(f"Neural network configuration loaded from XML config")
+    except Exception as e:
+        print(f"Failed to load neural network configuration from XML: {e}")
+        
+        # Fall back to CSV file if specified in metadata
+        #if "nn_config" in Meta["Var"].values:
+        #    nn_config_path = Meta.loc[Meta["Var"]=='nn_config']['Path'].values[0]
+        #    if os.path.exists(nn_config_path):
+        #        nn_config_df = pd.read_csv(nn_config_path)
+        #        nn_config = nn_config_df.iloc[0].to_dict()
+        #        # Convert layer_sizes from string to list if necessary
+        #        if isinstance(nn_config['layer_sizes'], str):
+        #            nn_config['layer_sizes'] = [int(size) for size in nn_config['layer_sizes'].split(',')]
+                
+                # Convert numerical values
+        #        nn_config['batch_size'] = int(nn_config['batch_size'])
+        #        nn_config['epochs'] = int(nn_config['epochs'])
+        #        print(f"Neural network configuration loaded from CSV file")
 
 # Create diagnostic directory if it doesn't exist
 os.makedirs("diag", exist_ok=True)
@@ -263,10 +279,12 @@ if os.path.exists("diag/FitOrder.csv"):
         print(x)
         print(var_name)
         X_train, X_test, y_train, y_test, regr = learn(x, y, True, SaveName+var_name, model_type, nn_config)
-        featuredf = plotout(regr, X_test, y_test, var_name, model_type)
+        
+       
         
         # Only include feature importance for RF models
         if model_type == "rf":
+            featuredf = plotout(regr, X_test, y_test, var_name, model_type)
             row = pd.DataFrame({'Predicting': var_name,
                        'Variable': featuredf["Name"].values,
                        "Importance": featuredf["Imp"].values})
