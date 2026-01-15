@@ -32,7 +32,8 @@ def get_cleaning_metadata():
         'CASE': [metadata.find('case').text],
         'N_runs': [int(metadata.find('n_runs').text)],
         'Varlist': [metadata.find('varlist').text],
-        'Parameter_loc': [metadata.find('parameter_loc').text]
+        'Parameter_loc': [metadata.find('parameter_loc').text],
+        'timestep': [metadata.find('timestep').text]
     }
     
     return pd.DataFrame(data)
@@ -57,7 +58,7 @@ def get_emulator_metadata():
             metadata.find('emulator_drive').text,
             metadata.find('fates_samples').text,
             metadata.find('model_type').text,
-            metadata.find('nn_config').text
+            metadata.find('nn_config').text,
         ],
         'Explanation': [
             '',
@@ -91,7 +92,7 @@ def get_emulator_settings():
         xe_text = var.find('xe').text
         y_i_text = var.find('y_i').text
         scaler_text = var.find('scaler').text
-        
+        downsample= var.find('downsample').text
         # If the values are in list format, parse them manually
         if var_name_text.startswith('[') and var_name_text.endswith(']'):
             try:
@@ -102,7 +103,7 @@ def get_emulator_settings():
                 xe_values = [int(x.strip()) for x in xe_text[1:-1].split(',')]
                 y_i_values = [int(y.strip()) for y in y_i_text[1:-1].split(',')]
                 scaler_values = [float(s.strip()) for s in scaler_text[1:-1].split(',')]
-                
+                downsample = [float(s.strip()) for s in downsample[1:-1].split(',')]
                 # Create a DataFrame row for each variable in the lists
                 for j in range(len(var_names)):
                     data.append({
@@ -112,7 +113,8 @@ def get_emulator_settings():
                         'xs': xs_values[j],
                         'xe': xe_values[j],
                         'y_i': y_i_values[j],
-                        'Scaler': scaler_values[j]
+                        'Scaler': scaler_values[j],
+                        "downsample":downsample[j]
                     })
             except (ValueError, IndexError) as e:
                 print(f"Error parsing list values: {e}")
@@ -124,7 +126,8 @@ def get_emulator_settings():
                     'xs': int(xs_text),
                     'xe': int(xe_text),
                     'y_i': int(y_i_text),
-                    'Scaler': float(scaler_text)
+                    'Scaler': float(scaler_text),
+                    'downsample':float(downsample)
                 })
         else:
             # Handle single value format
@@ -135,7 +138,8 @@ def get_emulator_settings():
                 'xs': int(xs_text),
                 'xe': int(xe_text),
                 'y_i': int(y_i_text),
-                'Scaler': float(scaler_text)
+                'Scaler': float(scaler_text),
+                'downsample':float(downsample)
             })
     
     return pd.DataFrame(data)

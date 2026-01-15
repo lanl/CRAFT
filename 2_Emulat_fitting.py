@@ -6,6 +6,7 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.preprocessing import StandardScaler
 import joblib
 import os
+import random
 import tensorflow as tf
 from config_utils import get_emulator_metadata, get_emulator_settings, get_nn_config
 
@@ -92,6 +93,7 @@ def build_nn_model(input_shape, layer_sizes=[64, 32, 1], activation='relu', opti
     return model
     
 def learn(x, y, save, filename, model_type="rf", nn_config=None):
+    
     scaler = StandardScaler().fit(x)
     x_z = scaler.transform(x)
     X_train, X_test, y_train, y_test = train_test_split(
@@ -176,7 +178,6 @@ SaveName = Meta.loc[Meta["Var"]=='SaveName']['Path'].values[0]
 print(SaveName)
 thres = float(Meta.loc[Meta["Var"]=='thres']['Path'])
 EmulatorDirve = Meta.loc[Meta["Var"]=='EmulatorDrive']['Path'].values[0]
-Downsample = 1.0
 Fates_sa = Meta.loc[Meta["Var"]=='FATES_samples']['Path']
 Fates_sa = Fates_sa.values[0]
 
@@ -230,12 +231,16 @@ if Full==True:
         xe = Variables.loc[i,"xe"]
         y_i = Variables.loc[i,"y_i"]
         var_name = Variables.loc[i,"var_name"]
+        Downsample=Variables.loc[i,"downsample"]
         Scaler = Variables.loc[i,"Scaler"]
         GPP = pd.read_csv(EmulatorDirve+Variables.loc[i, 'FATESruns'])
         if var_name in ["LWP_max"]:
             GPP["DOY"] = pd.DatetimeIndex(GPP['Date']).dayofyear
             GPP["Year"] = pd.DatetimeIndex(GPP['Date']).year
-       
+        print(len(GPP.columns))
+        print(xs,xe)
+        GPP.sample(n=int(len(GPP)*Downsample))
+
         x = GPP.iloc[:,np.r_[xs:xe]] ###here skipping all but the first tminus
         y = GPP.iloc[:,y_i]*Scaler
         print(var_name)
@@ -268,6 +273,7 @@ if os.path.exists("diag/FitOrder.csv"):
     print(NewVars)
     ImportanceDF = pd.DataFrame({})
     for i in list(range(0, len(Variables["xs"]))):
+        print(Variables)
         y_i = Variables.loc[i,"y_i"]
         var_name = Variables.loc[i,"var_name"]
         Scaler = Variables.loc[i,"Scaler"]
