@@ -36,7 +36,7 @@ print(str(DRIVE1+CASENAME+str(1)+".csv"))
 df=pd.DataFrame()
 for i in list(range(0,Nruns)):
     my_file=DRIVE1+CASENAME+str(i)+".csv"
-    print(my_file)
+    #print(my_file)
     if os.path.isfile(my_file):
         #print(i)
         one=pd.read_csv(my_file) 
@@ -47,7 +47,7 @@ for i in list(range(0,Nruns)):
         two=one.groupby(["Month","Year"],as_index=False).mean()
         cols=subset_varlist.copy()
         cols.extend(["Month","Year"])
-        print(cols)
+        #print(cols)
         two=two[cols]
         two["Step"]=list(range(0,len(two)))
         two["Model"]=i
@@ -58,6 +58,7 @@ print("Writing out variables for training:")
 samples["Model"]=list(range(1,len(samples)+1))
 
 for var in subset_varlist[1:]:
+    print(var)
     df2=pd.DataFrame()
     ms=df["Model"].unique()
     for i in ms: 
@@ -78,7 +79,7 @@ subset_varlist = [
     item for item, category in zip(varlist, timesteps) if category == "Day"
 ]
 subset_varlist.insert(0, "Date")
-print("Processing Daily Values")
+
 print(subset_varlist)
 print("Loading in files:")
 print(str(DRIVE1+CASENAME+str(1)+"h1.csv"))
@@ -88,7 +89,7 @@ for i in list(range(0,Nruns)):
     my_file=DRIVE1+CASENAME+str(i)+"h1.csv"
     #print(my_file)
     if os.path.isfile(my_file):
-        print(i)
+        #print(i)
         one=pd.read_csv(my_file) 
         one=one[subset_varlist]   
         one['Date']=pd.DatetimeIndex(one["Date"])
@@ -97,13 +98,13 @@ for i in list(range(0,Nruns)):
         two=one.groupby(['DOY',"Year"],as_index=False).mean()
         cols=subset_varlist.copy()
         cols.extend(['DOY',"Year"])
-        print(cols)
+        #print(cols)
         two=two[cols]
         two["Step"]=list(range(0,len(two)))
         two["Model"]=i
         df=pd.concat([df,two])
 
-print(df)
+#print(df)
 print("Writing out variables for training:")
 samples["Model"]=list(range(1,len(samples)+1))
 

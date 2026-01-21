@@ -234,19 +234,22 @@ if Full==True:
         Downsample=Variables.loc[i,"downsample"]
         Scaler = Variables.loc[i,"Scaler"]
         GPP = pd.read_csv(EmulatorDirve+Variables.loc[i, 'FATESruns'])
-        if var_name in ["LWP_max"]:
-            GPP["DOY"] = pd.DatetimeIndex(GPP['Date']).dayofyear
-            GPP["Year"] = pd.DatetimeIndex(GPP['Date']).year
-        print(len(GPP.columns))
-        print(xs,xe)
+     #   if var_name in ["LWP_max"]:
+     #       GPP["DOY"] = pd.DatetimeIndex(GPP['Date']).dayofyear
+     #       GPP["Year"] = pd.DatetimeIndex(GPP['Date']).year
+        #print(len(GPP.columns))
+        print("Creating full emulator for")
+
         GPP.sample(n=int(len(GPP)*Downsample))
 
         x = GPP.iloc[:,np.r_[xs:xe]] ###here skipping all but the first tminus
         y = GPP.iloc[:,y_i]*Scaler
         print(var_name)
+        print("Xstart XEnd Yvariable")
+        print(xs,xe,y_i)
         X_train, X_test, y_train, y_test, regr = learn(x, y, True, SaveName+var_name, model_type, nn_config)
         featuredf = plotout(regr, X_test, y_test, var_name, model_type)
-        
+        print("Done")
         # Only include feature importance for RF models
         if model_type == "rf":
             row = pd.DataFrame({'Predicting': var_name,
@@ -278,15 +281,15 @@ if os.path.exists("diag/FitOrder.csv"):
         var_name = Variables.loc[i,"var_name"]
         Scaler = Variables.loc[i,"Scaler"]
         GPP = pd.read_csv(EmulatorDirve+Variables.loc[i, 'FATESruns'])
-        print(GPP.columns)
-        
+        #print(GPP.columns)
+        print("Creating an emulator with reduced parameters for")
         # Make sure all NewVars exist in the dataframe
         valid_cols = [col for col in NewVars if col in GPP.columns]
         x = GPP[valid_cols]
         
         x = x[valid_cols]
         y = GPP.iloc[:,y_i]*Scaler
-        print(x)
+        #print(x)
         print(var_name)
         X_train, X_test, y_train, y_test, regr = learn(x, y, True, SaveName+var_name, model_type, nn_config)
         

@@ -7,7 +7,7 @@
         <n_runs>1000</n_runs>
         <varlist>Date,FATES_GPP,H2OSOIvalue1,FATES_LEAF_H2OPOT_SZPF_12,FATES_LEAF_H2OPOT_SZPF_25</varlist> <!--Always start with Date <-->
         <timestep>Month,Month,Month,Day,Day</timestep>
-        <parameter_loc>FATES_Param_samples_bci.csv</parameter_loc>
+        <parameter_loc>LHS.sam.csv</parameter_loc>
     </cleaning_metadata>
 
     <!-- Neural Network Configuration (previously nn_config.csv) -->
@@ -26,7 +26,7 @@
         <save_name>CRAFT_practice_Full</save_name>
         <thres>0.03</thres>
         <emulator_drive>data/Vars/</emulator_drive>
-        <fates_samples>FATES_Param_samples_bci.csv</fates_samples>
+        <fates_samples>LHS.sam.csv</fates_samples>
         <model_type>rf</model_type>
         <nn_config>nn_config.csv</nn_config>
         
@@ -35,13 +35,13 @@
     <!-- Emulator Settings (previously Emulator_Settings_v1.csv) -->
     <emulator_settings>
         <variable>
-            <var_name>[FATES_LEAF_H2OPOT]</var_name>
-            <fates_runs>[FATES_LEAF_H2OPOT_SZPF_25DailyforML_edited.csv]</fates_runs>
-            <xs>[5]</xs>
-            <xe>[45]</xe>
-            <y_i>[3]</y_i>
-            <scaler>[-1e7]</scaler>
-            <downsample>[.5]</downsample>
+            <var_name>[GPP,H2OSOIvalue1,Runoff,FATES_LEAF_H2OPOT]</var_name>
+            <fates_runs>[FATES_GPPforML.csv,H2OSOIvalue1forML.csv,QRUNOFFforML.csv,FATES_LEAF_H2OPOT_SZPF_25DailyforML.csv]</fates_runs>
+            <xs>[5,5,5,5]</xs>
+            <xe>[45,45,45,45]</xe>
+            <y_i>[3,3,3,3]</y_i>
+            <scaler>[100000000,1,1,1]</scaler>
+            <downsample>[1,1,1,.5]</downsample>
         </variable>
         <!-- Additional variables can be added here with the same structure -->
     </emulator_settings>

@@ -312,8 +312,6 @@ def AdaptiveMCMC(par_cov_matrix,steps,adapt_interval,burnin,dim,x_1,benchmark=".
             
             x_1=newproposed
             accepted_samples_for_adaptation.append(newproposed)
-            #rint('Accept')
-           # print(len(accepted_samples_for_adaptation))
             if time >Trueburn:
                 acceptlog=pd.concat([acceptlog,pd.DataFrame(newproposed)],axis=1)
         if lag==20:
