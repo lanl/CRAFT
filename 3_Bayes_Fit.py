@@ -35,6 +35,7 @@ Obs_List = eval(Settings.loc['Obs_List', 'value'])
 list1 = eval(Settings.loc['list1', 'value'])
 samples_file = Settings.loc['samples_file', 'value']
 obsfile = Settings.loc['obsfile', 'value']
+output_file = Settings.loc['output_file', 'value']
 
 # Load model configuration to determine model types
 try:
@@ -110,7 +111,8 @@ def log_prob(regrli, scarlerli, x):
             one = x_1_run_set.iloc[:, 1:].sort_values(["year", "month"])
             one=one[Varset]
             #print(one)
-           # one = one.set_axis(Names, axis=1)            
+           # one = one.set_axis(Names, axis=1)  
+        #print(one)          
         one = scaler.transform(one)
         
         # Make predictions based on model type
@@ -167,15 +169,14 @@ def bounce(newproposed,samples_scale):
     for i in list(range(0,len(samples_scale.columns))):### Maybe this isn't minus 1
         newproposed[i]=boundby(newproposed[i],samples_scale.iloc[:,i].min(),samples_scale.iloc[:,i].max())
     return(newproposed)
+
+
 def acceptance(x_likelihood, x_new_likelihood):
   if x_new_likelihood>x_likelihood:
         #rint("True_accept")
         return True
   else:
         accept=np.random.uniform(0,1)
-        # Since we did a log likelihood, we need to exponentiate in order to compare to the random number
-        # less likely x_new are less likely to be accepted
-        #print(np.exp(x_new_likelihood-x_likelihood))
         if accept < np.exp(x_new_likelihood-x_likelihood):
          #   print("roll accept")
             return True
@@ -255,7 +256,6 @@ def TestLL(regrli,scarleri,initialpos=225):
     Logl=log_prob(regrli,scarleri,scaler_pars.transform(np.array(initial_position).flatten().reshape(1, -1)).flatten())
     print(Logl)
 
-
 def AdaptiveMCMC(par_cov_matrix,steps,adapt_interval,burnin,dim,x_1,benchmark="./save.csv"):
     '''
     par_cov_matrix: initial step matrix
@@ -278,7 +278,7 @@ def AdaptiveMCMC(par_cov_matrix,steps,adapt_interval,burnin,dim,x_1,benchmark=".
    
     x_1=scaler_pars.transform(np.array(x_1).flatten().reshape(1, -1)).flatten()
     Logl=log_prob(regrli,scarleri,x_1)
-    print("Initial Logliklihood")
+    print("~~~~~~~~~~~~~~~~~~~Initial Logliklihood~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
     print(Logl)
     sum_states = np.zeros(dim)
     outer_product_sum = np.zeros((dim, dim))
@@ -288,13 +288,13 @@ def AdaptiveMCMC(par_cov_matrix,steps,adapt_interval,burnin,dim,x_1,benchmark=".
     accepted_samples_for_adaptation=[]
     Trueburn=burnin+adapt_interval
     for time in list(range(1,steps)):
-        
+        #print(time)
         lag=lag+1
         if time >= burnin and (time + 1) % adapt_interval == 0 and (len(accepted_samples_for_adaptation) > 1):
                 # Update running sums for mean and covariance calculation
                    #print(accepted_samples_for_adaptation)
-                    par_cov_matrix= (np.cov(np.array(accepted_samples_for_adaptation).T))*.5
-                    #print(par_cov_matrix)
+                    par_cov_matrix= (np.cov(np.array(accepted_samples_for_adaptation).T))*.2
+                    ####print(par_cov_matrix)
                     # Add a small regularization to prevent singular covariance matrix
                     par_cov_matrix += np.eye(dim) * 1e-6
                    
@@ -304,6 +304,12 @@ def AdaptiveMCMC(par_cov_matrix,steps,adapt_interval,burnin,dim,x_1,benchmark=".
         movelog=pd.concat([movelog,pd.DataFrame(newproposed)],axis=1)
         NewLogl=log_prob(regrli,scarleri,np.array(newproposed))
         NewLogl=NewLogl+plus
+        if time % 200 == 0:
+            print("~~~~Timestep~~~~~~~")
+            print(time)
+            print("Log-likelihood")
+            print(Logl)
+        #print(NewLogl)  
         scorelog=np.append(scorelog,Logl)
         if (acceptance(Logl,NewLogl)):
             Logl=NewLogl-plus
@@ -312,28 +318,19 @@ def AdaptiveMCMC(par_cov_matrix,steps,adapt_interval,burnin,dim,x_1,benchmark=".
             
             x_1=newproposed
             accepted_samples_for_adaptation.append(newproposed)
+            #print('Accept')
+            #print(len(accepted_samples_for_adaptation))
             if time >Trueburn:
                 acceptlog=pd.concat([acceptlog,pd.DataFrame(newproposed)],axis=1)
-        if lag==20:
-            lag=0
-            plus=plus+100
-       #     x_1=newproposed
-       #     accepted_samples_for_adaptation.append(newproposed)
-       #     print('Accept')
-       #     print(len(accepted_samples_for_adaptation))
-       #     if time >Trueburn:
-       #         acceptlog=pd.concat([acceptlog,pd.DataFrame(newproposed)],axis=1)
-        if time % 500 == 0:
-            print(time)
-            print(Logl)
+                
+        if (time % 500 == 0 ):
+            pd.DataFrame(movelog).to_csv(benchmark)
+            print('##########################################################################################')
             print("Total Accepted")
             print(len(acceptlog.T))
-            pd.DataFrame(movelog).to_csv(benchmark)
-
     print("Total Accepted")
     print(len(acceptlog.T))
     return(movelog)
-
 
 Varset=Varset.iloc[:,1].values
 
@@ -341,7 +338,9 @@ indices_to_delete = np.where(Varset == "month")[0]
 Varset2 = np.delete(Varset, indices_to_delete)
 indices_to_delete = np.where(Varset2 == "year")[0]
 Varset2 = np.delete(Varset2, indices_to_delete)
-
+indices_to_delete = np.where(Varset2 =="DOY")[0]
+Varset2 = np.delete(Varset2, indices_to_delete)
+print(Varset2)
 samples_sub=samples[Varset2]
 scaler_pars =StandardScaler().fit(samples_sub.values)
 samples_scale=scaler_pars.transform(samples_sub)
@@ -364,7 +363,7 @@ TestLL(regrli,scarleri,initialpos=111)
 
 par_cov_matrix=np.outer(S,S)
 #print(par_cov_matrix)
-print("Beginning MCMC sampling")
+print("~~~~~~~~~~Beginning MCMC sampling~~~~~~~~~~~~~~~~~~~~~~~")
 log=AdaptiveMCMC(par_cov_matrix,
              steps,
              adapt_interval,
@@ -373,4 +372,4 @@ log=AdaptiveMCMC(par_cov_matrix,
              benchmark="bm.csv")
 
 Fixedlog=pd.DataFrame(scaler_pars.inverse_transform(log.T))
-Fixedlog.to_csv("data/MCMC_runs/TestMC.csv")
+Fixedlog.to_csv(output_file)
