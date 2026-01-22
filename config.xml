@@ -59,5 +59,17 @@
         <samples_file>FATES_Param_samples_bci.csv</samples_file>
         <obsfile>Example_Obs_data/Syntheticg_Set2_63025.csv</obsfile>
         <output_file>data/MCMC_runs/TestMC.csv</output_file>
+        
+        <!-- MCMC Sampler Selection: 'adaptive' or 'dream' -->
+        <sampler_method>dream</sampler_method>
+        
+        <!-- DREAM-specific settings (only used when sampler_method='dream') -->
+        <dream_n_chains>5</dream_n_chains>
+        <dream_delta>2</dream_delta>
+        <dream_c>0.1</dream_c>
+        <dream_c_star>1e-12</dream_c_star>
+        <dream_n_crossover>3</dream_n_crossover>
+        <dream_p_gamma_unity>0.2</dream_p_gamma_unity>
+        <dream_thin>1</dream_thin>
     </bayes_settings>
 </configuration>

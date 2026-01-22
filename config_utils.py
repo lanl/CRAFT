@@ -158,7 +158,9 @@ def get_bayes_settings():
         'parameter': [
             'initialpos', 'steps', 'adapt_interval', 'burnin',
             'Model_List', 'Scaler_List', 'Obs_List', 'list1',
-            'samples_file', 'obsfile', 'output_file'
+            'samples_file', 'obsfile', 'output_file', 'sampler_method',
+            'dream_n_chains', 'dream_delta', 'dream_c', 'dream_c_star',
+            'dream_n_crossover', 'dream_p_gamma_unity', 'dream_thin'
         ],
         'value': [
             settings.find('initialpos').text,
@@ -171,7 +173,15 @@ def get_bayes_settings():
             settings.find('list1').text,
             settings.find('samples_file').text,
             settings.find('obsfile').text,
-            settings.find('output_file').text
+            settings.find('output_file').text,
+            settings.find('sampler_method').text,
+            settings.find('dream_n_chains').text,
+            settings.find('dream_delta').text,
+            settings.find('dream_c').text,
+            settings.find('dream_c_star').text,
+            settings.find('dream_n_crossover').text,
+            settings.find('dream_p_gamma_unity').text,
+            settings.find('dream_thin').text
         ]
     }
     

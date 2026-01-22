@@ -16,6 +16,14 @@ import os
 import tensorflow as tf
 from config_utils import get_bayes_settings, get_emulator_metadata
 
+# Import DREAM sampler
+try:
+    from DREAM_example import DREAMSampler
+    DREAM_AVAILABLE = True
+except ImportError:
+    DREAM_AVAILABLE = False
+    print("Warning: DREAM_example.py not found. DREAM sampler will not be available.")
+
 script_path = os.path.abspath(__file__)
 # Get the directory containing the script
 script_directory = os.path.dirname(script_path)
@@ -361,15 +369,107 @@ if LOADIN==True:
 
 TestLL(regrli,scarleri,initialpos=111)
 
-par_cov_matrix=np.outer(S,S)
-#print(par_cov_matrix)
-print("~~~~~~~~~~Beginning MCMC sampling~~~~~~~~~~~~~~~~~~~~~~~")
-log=AdaptiveMCMC(par_cov_matrix,
-             steps,
-             adapt_interval,
-             burnin,dims,
-             samples_sub.iloc[[initialpos]].T,
-             benchmark="bm.csv")
+# Load sampler configuration
+sampler_method = Settings.loc['sampler_method', 'value'].lower()
+print(f"\n{'='*70}")
+print(f"MCMC Sampler: {sampler_method.upper()}")
+print(f"{'='*70}\n")
 
-Fixedlog=pd.DataFrame(scaler_pars.inverse_transform(log.T))
-Fixedlog.to_csv(output_file)
+# Run MCMC sampling based on selected method
+if sampler_method == 'dream':
+    # DREAM Sampler
+    if not DREAM_AVAILABLE:
+        raise ImportError("DREAM sampler selected but DREAM_example.py not found!")
+    
+    # Load DREAM parameters
+    dream_n_chains = int(Settings.loc['dream_n_chains', 'value'])
+    dream_delta = int(Settings.loc['dream_delta', 'value'])
+    dream_c = float(Settings.loc['dream_c', 'value'])
+    dream_c_star = float(Settings.loc['dream_c_star', 'value'])
+    dream_n_crossover = int(Settings.loc['dream_n_crossover', 'value'])
+    dream_p_gamma_unity = float(Settings.loc['dream_p_gamma_unity', 'value'])
+    dream_thin = int(Settings.loc['dream_thin', 'value'])
+    
+    print(f"DREAM Configuration:")
+    print(f"  Number of chains: {dream_n_chains}")
+    print(f"  Delta (chain pairs): {dream_delta}")
+    print(f"  Total iterations: {steps}")
+    print(f"  Burnin: {burnin}")
+    print(f"  Thinning: {dream_thin}")
+    print(f"\n~~~~~~~~~~Beginning DREAM sampling~~~~~~~~~~~~~~~~~~~~~~~")
+    
+    # Define log posterior wrapper for DREAM
+    def log_posterior_dream(params):
+        """Wrapper for log_prob to work with DREAM sampler"""
+        # params is already in original scale from DREAM
+        x_scaled = scaler_pars.transform(params.reshape(1, -1)).flatten()
+        return log_prob(regrli, scarleri, x_scaled)
+    
+    # Initialize DREAM sampler
+    sampler = DREAMSampler(
+        log_posterior=log_posterior_dream,
+        n_chains=dream_n_chains,
+        n_params=dims,
+        delta=dream_delta,
+        c=dream_c,
+        c_star=dream_c_star,
+        n_crossover=dream_n_crossover,
+        p_gamma_unity=dream_p_gamma_unity
+    )
+    
+    # Initialize chains from samples
+    if dream_n_chains <= len(samples_sub):
+        initial_positions = samples_sub.sample(dream_n_chains, random_state=42).values
+    else:
+        # If need more chains than samples, duplicate with noise
+        base_samples = samples_sub.sample(dream_n_chains, replace=True, random_state=42).values
+        noise = np.random.randn(dream_n_chains, dims) * 0.01
+        initial_positions = base_samples + noise
+    
+    sampler.initialize_chains(initial_positions=initial_positions)
+    
+    # Run DREAM
+    samples_dream, log_posts_dream = sampler.run(
+        n_iterations=steps,
+        burnin=burnin,
+        thin=dream_thin,
+        verbose=True
+    )
+    
+    # Convert to DataFrame and save
+    Fixedlog = pd.DataFrame(samples_dream, columns=Varset2)
+    Fixedlog['log_posterior'] = log_posts_dream
+    Fixedlog.to_csv(output_file, index=False)
+    
+    print(f"\nDREAM sampling completed!")
+    print(f"Total posterior samples: {len(Fixedlog)}")
+    print(f"Results saved to: {output_file}")
+    
+elif sampler_method == 'adaptive':
+    # Original Adaptive MCMC
+    print(f"Adaptive MCMC Configuration:")
+    print(f"  Total iterations: {steps}")
+    print(f"  Adaptation interval: {adapt_interval}")
+    print(f"  Burnin: {burnin}")
+    print(f"\n~~~~~~~~~~Beginning Adaptive MCMC sampling~~~~~~~~~~~~~~~~~~~~~~~")
+    
+    par_cov_matrix = np.outer(S, S)
+    log = AdaptiveMCMC(par_cov_matrix,
+                 steps,
+                 adapt_interval,
+                 burnin, dims,
+                 samples_sub.iloc[[initialpos]].T,
+                 benchmark="bm.csv")
+    
+    Fixedlog = pd.DataFrame(scaler_pars.inverse_transform(log.T))
+    Fixedlog.to_csv(output_file)
+    
+    print(f"\nAdaptive MCMC sampling completed!")
+    print(f"Results saved to: {output_file}")
+    
+else:
+    raise ValueError(f"Unknown sampler method: {sampler_method}. Choose 'adaptive' or 'dream'.")
+
+print(f"\n{'='*70}")
+print("MCMC Sampling Complete!")
+print(f"{'='*70}")
