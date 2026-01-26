@@ -149,7 +149,7 @@ def log_prob(regrli, scarlerli, x):
     #addobs=DFout.loc[DFout["Set"]=='MonthlyGPP']["obs"]/DFout.loc[DFout["Set"]=='ET']["obs"]
     #### Calculate full ll
     #print(DFout['sim'],DFout['obs'])
-    ll1=np.sum(norm.logpdf(DFout['sim'], loc=DFout['obs'], scale=50.0))
+    ll1=np.sum(norm.logpdf(DFout['sim'], loc=DFout['obs'], scale=20.0))
     #ll2=np.sum(norm.logpdf(addsim, loc=addobs, scale=5.0))
     #ll1+=ll2
     # Check physical possibility/Values are within the bounds of initial sample. 

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
-    <!-- Cleaning Metadata (previously Cleaning_Metadata_v1.csv) -->
+    <!-- Cleaning Metadata-->
     <cleaning_metadata>
         <drive>C:/Users/345578/Documents/GitHub/CRAFT/output_BCI_2pft.IELMFATES/</drive>
         <case>BCI_2pft.IELMFATES</case>
@@ -10,7 +10,7 @@
         <parameter_loc>FATES_Param_samples_bci.csv</parameter_loc>
     </cleaning_metadata>
 
-    <!-- Neural Network Configuration (previously nn_config.csv) -->
+    <!-- Neural Network Configuration-->
     <nn_config>
         <layer_sizes>44,1280,640,256,128,64,32,1</layer_sizes>
         <activation>relu</activation>
@@ -20,7 +20,7 @@
         <batch_size>100</batch_size>
     </nn_config>
 
-    <!-- Emulator Metadata (previously Emulator_Metadata_v1.csv) -->
+    <!-- Emulator Metadata-->
     <emulator_metadata>
         <settings_file>Emulator_Fitting_Settings1.csv</settings_file>
         <save_name>CRAFT_practice_Full</save_name>
@@ -29,10 +29,9 @@
         <fates_samples>FATES_Param_samples_bci.csv</fates_samples>
         <model_type>rf</model_type>
         <nn_config>nn_config.csv</nn_config>
-        
     </emulator_metadata>
 
-    <!-- Emulator Settings (previously Emulator_Settings_v1.csv) -->
+    <!-- Emulator Settings-->
     <emulator_settings>
         <variable>
             <var_name>[FATES_GPP,H2OSOIvalue1]</var_name>
@@ -46,7 +45,7 @@
         <!-- Additional variables can be added here with the same structure -->
     </emulator_settings>
 
-    <!-- Bayes Settings (previously Bayes_Settings_v1.csv) -->
+    <!-- Bayes Settings -->
     <bayes_settings>
         <initialpos>45</initialpos>
         <steps>10000</steps>
@@ -58,11 +57,9 @@
         <list1>['MonthlyGPP','SWC10']</list1>
         <samples_file>FATES_Param_samples_bci.csv</samples_file>
         <obsfile>Example_Obs_data/Syntheticg_Set2_63025.csv</obsfile>
-        <output_file>data/MCMC_runs/TestMC.csv</output_file>
-        
+        <output_file>data/MCMC_runs/TestMC.csv</output_file>        
         <!-- MCMC Sampler Selection: 'adaptive' or 'dream' -->
         <sampler_method>dream</sampler_method>
-        
         <!-- DREAM-specific settings (only used when sampler_method='dream') -->
         <dream_n_chains>5</dream_n_chains>
         <dream_delta>2</dream_delta>
