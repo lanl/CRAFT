@@ -123,3 +123,101 @@ for var in subset_varlist[1:]:
         sub1["year"]=sub1["Date"].dt.year
         df2=pd.concat([df2,sub1])
     df2.to_csv('data/Vars/'+var+'DailyforML.csv')
+
+subset_varlist = [
+    item for item, category in zip(varlist, timesteps) if category == "DayMin"
+]
+subset_varlist.insert(0, "Date")
+
+print(subset_varlist)
+print("Loading in files:")
+print(str(DRIVE1+CASENAME+str(1)+"h1.csv"))
+
+df=pd.DataFrame()
+for i in list(range(0,Nruns)):
+    my_file=DRIVE1+CASENAME+str(i)+"h1.csv"
+    #print(my_file)
+    if os.path.isfile(my_file):
+        #print(i)
+        one=pd.read_csv(my_file) 
+        one=one[subset_varlist]   
+        one['Date']=pd.DatetimeIndex(one["Date"])
+        one['DOY']=one["Date"].dt.dayofyear
+        one['Year']=one["Date"].dt.year
+        two=one.groupby(['DOY',"Year"],as_index=False).min()
+        cols=subset_varlist.copy()
+        cols.extend(['DOY',"Year"])
+        #print(cols)
+        two=two[cols]
+        two["Step"]=list(range(0,len(two)))
+        two["Model"]=i
+        df=pd.concat([df,two])
+
+#print(df)
+print("Writing out variables for training:")
+samples["Model"]=list(range(1,len(samples)+1))
+
+for var in subset_varlist[1:]:
+    print(var)
+    df2=pd.DataFrame()
+    ms=df["Model"].unique()
+    for i in ms: 
+        
+        checky=df[["Date","Step",var,"Model"]]
+        sub1=checky[checky["Model"]==i]
+        sub1=sub1.iloc[4:,:].merge(samples,on="Model",how="left")
+        sub1=sub1.reset_index(drop=True)
+       # sub1['Date']=pd.DatetimeIndex(sub1["Date"])
+        sub1['DOY']=sub1["Date"].dt.dayofyear
+        sub1["year"]=sub1["Date"].dt.year
+        df2=pd.concat([df2,sub1])
+    df2.to_csv('data/Vars/'+var+'DailyminforML.csv')
+
+    subset_varlist = [
+    item for item, category in zip(varlist, timesteps) if category == "DayMax"
+]
+subset_varlist.insert(0, "Date")
+
+print(subset_varlist)
+print("Loading in files:")
+print(str(DRIVE1+CASENAME+str(1)+"h1.csv"))
+
+df=pd.DataFrame()
+for i in list(range(0,Nruns)):
+    my_file=DRIVE1+CASENAME+str(i)+"h1.csv"
+    #print(my_file)
+    if os.path.isfile(my_file):
+        #print(i)
+        one=pd.read_csv(my_file) 
+        one=one[subset_varlist]   
+        one['Date']=pd.DatetimeIndex(one["Date"])
+        one['DOY']=one["Date"].dt.dayofyear
+        one['Year']=one["Date"].dt.year
+        two=one.groupby(['DOY',"Year"],as_index=False).max()
+        cols=subset_varlist.copy()
+        cols.extend(['DOY',"Year"])
+        #print(cols)
+        two=two[cols]
+        two["Step"]=list(range(0,len(two)))
+        two["Model"]=i
+        df=pd.concat([df,two])
+
+#print(df)
+print("Writing out variables for training:")
+samples["Model"]=list(range(1,len(samples)+1))
+
+for var in subset_varlist[1:]:
+    print(var)
+    df2=pd.DataFrame()
+    ms=df["Model"].unique()
+    for i in ms: 
+        
+        checky=df[["Date","Step",var,"Model"]]
+        sub1=checky[checky["Model"]==i]
+        sub1=sub1.iloc[4:,:].merge(samples,on="Model",how="left")
+        sub1=sub1.reset_index(drop=True)
+       # sub1['Date']=pd.DatetimeIndex(sub1["Date"])
+        sub1['DOY']=sub1["Date"].dt.dayofyear
+        sub1["year"]=sub1["Date"].dt.year
+        df2=pd.concat([df2,sub1])
+    df2.to_csv('data/Vars/'+var+'DailymaxforML.csv')

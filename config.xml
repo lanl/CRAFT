@@ -2,12 +2,12 @@
 <configuration>
     <!-- Cleaning Metadata-->
     <cleaning_metadata>
-        <drive>C:/Users/345578/Documents/GitHub/CRAFT/output_BCI_2pft.IELMFATES/</drive>
-        <case>BCI_2pft.IELMFATES</case>
+        <drive>C:/Users/345578/Documents/GitHub/CRAFT/output_SLZ_2pft.IELMFATES/</drive>
+        <case>SLZ_2pft.IELMFATES</case>
         <n_runs>1000</n_runs>
-        <varlist>Date,FATES_GPP,H2OSOIvalue1,FATES_LEAF_H2OPOT_SZPF_12,FATES_LEAF_H2OPOT_SZPF_25</varlist> <!--Always start with Date <-->
-        <timestep>Month,Month,Month,Day,Day</timestep>
-        <parameter_loc>FATES_Param_samples_bci.csv</parameter_loc>
+        <varlist>Date,FATES_GPP,H2OSOIvalue1,FATES_LEAF_H2OPOT_SZPF_12,FATES_LEAF_H2OPOT_SZPF_24,FATES_LEAF_H2OPOT_SZPF_12,FATES_LEAF_H2OPOT_SZPF_24</varlist> <!--Always start with Date <-->
+        <timestep>Month,Month,Month,DayMin,DayMin,DayMax,DayMax</timestep>
+        <parameter_loc>FATES_Param_samples_slz_forML.csv</parameter_loc>
     </cleaning_metadata>
 
     <!-- Neural Network Configuration-->
@@ -26,7 +26,7 @@
         <save_name>CRAFT_practice_Full</save_name>
         <thres>0.03</thres>
         <emulator_drive>data/Vars/</emulator_drive>
-        <fates_samples>FATES_Param_samples_bci.csv</fates_samples>
+        <fates_samples>FATES_Param_samples_slz_forML.csv</fates_samples>
         <model_type>rf</model_type>
         <nn_config>nn_config.csv</nn_config>
     </emulator_metadata>
@@ -34,30 +34,29 @@
     <!-- Emulator Settings-->
     <emulator_settings>
         <variable>
-            <var_name>[FATES_GPP,H2OSOIvalue1]</var_name>
-            <fates_runs>[FATES_GPPMonthlyforML.csv,H2OSOIvalue1MonthlyforML.csv]</fates_runs>
-            <xs>[5,5]</xs>
-            <xe>[45,45]</xe>
-            <y_i>[3,3]</y_i>
-            <scaler>[1e7,1]</scaler>
-            <downsample>[1,1]</downsample>
+            <var_name>[H2OSOIvalue1,PFT1_LWPMax,PFT1_LWPMin,PFT2_LWPMax,PFT2_LWPMin]</var_name>
+            <fates_runs>[H2OSOIvalue1MonthlyforML.csv,FATES_LEAF_H2OPOT_SZPF_12DailymaxforML.csv,FATES_LEAF_H2OPOT_SZPF_12DailyminforML.csv,FATES_LEAF_H2OPOT_SZPF_24DailymaxforML.csv,FATES_LEAF_H2OPOT_SZPF_24DailyminforML.csv]</fates_runs>
+            <xs>[5,5,5,5,5]</xs>
+            <xe>[40,40,40,40,40]</xe>
+            <y_i>[3,3,3,3,3]</y_i>
+            <scaler>[1,1e-6,1e-6,1e-6,1e-6]</scaler>
+            <downsample>[1,.1,.1,.1,.1]</downsample>
         </variable>
-        <!-- Additional variables can be added here with the same structure -->
     </emulator_settings>
 
     <!-- Bayes Settings -->
     <bayes_settings>
         <initialpos>45</initialpos>
-        <steps>10000</steps>
+        <steps>2000</steps>
         <adapt_interval>1000</adapt_interval>
         <burnin>1000</burnin>
-        <model_list>['CRAFT_practice_FullFATES_GPP','CRAFT_practice_FullH2OSOIvalue1']</model_list>
-        <scaler_list>['CRAFT_practice_FullFATES_GPP_Scalar','CRAFT_practice_FullH2OSOIvalue1_Scalar']</scaler_list>
-        <obs_list>['MonthlyGPP','SWC10']</obs_list>
-        <list1>['MonthlyGPP','SWC10']</list1>
-        <samples_file>FATES_Param_samples_bci.csv</samples_file>
-        <obsfile>Example_Obs_data/Syntheticg_Set2_63025.csv</obsfile>
-        <output_file>data/MCMC_runs/TestMC.csv</output_file>        
+        <model_list>['CRAFT_practice_FullH2OSOIvalue1','CRAFT_practice_FullPFT1_LWPMin','CRAFT_practice_FullPFT2_LWPMin']</model_list>
+        <scaler_list>['CRAFT_practice_FullH2OSOIvalue1_Scalar','CRAFT_practice_FullPFT1_LWPMin_Scalar','CRAFT_practice_FullPFT2_LWPMin_Scalar']</scaler_list>
+        <obs_list>["H2OSOI1",'LWP_min','LWP_min']</obs_list>
+        <list1>["H2OSOI1",'LWP_min','LWP_min']</list1>
+        <samples_file>FATES_Param_samples_slz_forML.csv</samples_file>
+        <obsfile>Example_Obs_data/SLZ_Observations.csv</obsfile>
+        <output_file>data/MCMC_runs/TestSLZ.csv</output_file>        
         <!-- MCMC Sampler Selection: 'adaptive' or 'dream' -->
         <sampler_method>dream</sampler_method>
         <!-- DREAM-specific settings (only used when sampler_method='dream') -->
