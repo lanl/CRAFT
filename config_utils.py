@@ -49,10 +49,9 @@ def get_emulator_metadata():
     metadata = root.find('emulator_metadata')
     
     data = {
-        'Var': ['Settings_File', 'SaveName', 'thres', 'EmulatorDrive', 
+        'Var': [ 'SaveName', 'thres', 'EmulatorDrive', 
                 'FATES_samples', 'model_type', 'nn_config'],
         'Path': [
-            metadata.find('settings_file').text,
             metadata.find('save_name').text,
             metadata.find('thres').text,
             metadata.find('emulator_drive').text,
@@ -61,7 +60,6 @@ def get_emulator_metadata():
             metadata.find('nn_config').text,
         ],
         'Explanation': [
-            '',
             '',
             '',
             '',

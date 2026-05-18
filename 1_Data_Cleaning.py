@@ -4,7 +4,8 @@ import matplotlib.pyplot as plt
 import os.path
 from config_utils import get_cleaning_metadata
 
-
+os.makedirs("data", exist_ok=True)
+os.makedirs("data/Vars", exist_ok=True)
 lu=get_cleaning_metadata()
 print(lu)
 DRIVE1=lu["DRIVE"][0]
@@ -12,10 +13,11 @@ print(DRIVE1)
 
 CASENAME=lu["CASE"][0]
 print(CASENAME)
+
 varlist=lu["Varlist"].values[0]
 varlist=varlist.split(",")
 print(varlist)
-Nruns=int(lu["N_runs"].values)
+Nruns=int(lu["N_runs"].values[0])
 print(Nruns)
 samples=lu["Parameter_loc"].values[0]
 print(samples)

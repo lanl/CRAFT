@@ -53,7 +53,7 @@ def plotout(regr, X_test, y_test, Title, model_type="rf"):
         
         # For neural network, we don't have feature importance directly
         # Instead, we'll just plot the testing set results
-        fig = plt.figure(figsize=(5, 5))
+        fig = plt.figure(figsize=(5, 10))
         plt.plot(predicty, y_test, 'ro', alpha=0.2, color="blue")
         plt.xlabel("predicted", fontsize=15)
         plt.ylabel("observed", fontsize=15)
@@ -176,7 +176,7 @@ Meta = get_emulator_metadata()
 
 SaveName = Meta.loc[Meta["Var"]=='SaveName']['Path'].values[0]
 print(SaveName)
-thres = float(Meta.loc[Meta["Var"]=='thres']['Path'])
+thres = float(Meta.loc[Meta["Var"]=='thres']['Path'].values[0])
 EmulatorDirve = Meta.loc[Meta["Var"]=='EmulatorDrive']['Path'].values[0]
 Fates_sa = Meta.loc[Meta["Var"]=='FATES_samples']['Path']
 Fates_sa = Fates_sa.values[0]
@@ -276,7 +276,6 @@ if os.path.exists("diag/FitOrder.csv"):
     print(NewVars)
     ImportanceDF = pd.DataFrame({})
     for i in list(range(0, len(Variables["xs"]))):
-        print(Variables)
         y_i = Variables.loc[i,"y_i"]
         var_name = Variables.loc[i,"var_name"]
         Scaler = Variables.loc[i,"Scaler"]
@@ -292,9 +291,7 @@ if os.path.exists("diag/FitOrder.csv"):
         #print(x)
         print(var_name)
         X_train, X_test, y_train, y_test, regr = learn(x, y, True, SaveName+var_name, model_type, nn_config)
-        
-       
-        
+
         # Only include feature importance for RF models
         if model_type == "rf":
             featuredf = plotout(regr, X_test, y_test, var_name, model_type)
