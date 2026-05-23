@@ -20,22 +20,59 @@ def read_xml_config(file_path='config.xml'):
 def get_cleaning_metadata():
     """
     Read cleaning metadata from the XML configuration file.
-    
+
     Returns:
         pd.DataFrame: DataFrame containing cleaning metadata
     """
     root = read_xml_config()
     metadata = root.find('cleaning_metadata')
-    
-    data = {
-        'DRIVE': [metadata.find('drive').text],
-        'CASE': [metadata.find('case').text],
-        'N_runs': [int(metadata.find('n_runs').text)],
-        'Varlist': [metadata.find('varlist').text],
-        'Parameter_loc': [metadata.find('parameter_loc').text],
-        'timestep': [metadata.find('timestep').text]
-    }
-    
+
+    # Check if we have multiple drives and cases (new format)
+    drives_element = metadata.find('drives')
+    cases_element = metadata.find('cases')
+
+    if drives_element is not None and cases_element is not None:
+        # New format with multiple drives and cases
+        drives = drives_element.text.split(',')
+        cases = cases_element.text.split(',')
+
+        # Get case IDs if available
+        case_ids_element = metadata.find('case_ids')
+        if case_ids_element is not None:
+            case_ids = [int(cid.strip()) for cid in case_ids_element.text.split(',')]
+            # Ensure we have the same number of case IDs as drives/cases
+            if len(case_ids) != len(drives):
+                raise ValueError(f"Number of case_ids ({len(case_ids)}) does not match number of drives/cases ({len(drives)})")
+        else:
+            # Default to sequential numbering if no case_ids specified
+            case_ids = list(range(1, len(drives) + 1))
+
+        # Ensure we have the same number of drives and cases
+        if len(drives) != len(cases):
+            raise ValueError(f"Number of drives ({len(drives)}) does not match number of cases ({len(cases)})")
+
+        # Create a row for each drive/case combination
+        data = {
+            'DRIVE': drives,
+            'CASE': cases,
+            'CASE_ID': case_ids,
+            'N_runs': [int(metadata.find('n_runs').text)] * len(drives),
+            'Varlist': [metadata.find('varlist').text] * len(drives),
+            'Parameter_loc': [metadata.find('parameter_loc').text] * len(drives),
+            'timestep': [metadata.find('timestep').text] * len(drives)
+        }
+    else:
+        # Old format with single drive and case (backward compatibility)
+        data = {
+            'DRIVE': [metadata.find('drive').text],
+            'CASE': [metadata.find('case').text],
+            'CASE_ID': [1],  # Default case ID for backward compatibility
+            'N_runs': [int(metadata.find('n_runs').text)],
+            'Varlist': [metadata.find('varlist').text],
+            'Parameter_loc': [metadata.find('parameter_loc').text],
+            'timestep': [metadata.find('timestep').text]
+        }
+
     return pd.DataFrame(data)
 
 def get_emulator_metadata():
