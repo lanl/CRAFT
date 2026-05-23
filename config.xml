@@ -2,12 +2,12 @@
 <configuration>
     <!-- Cleaning Metadata-->
     <cleaning_metadata>
-        <drive>output_BCI_2pft.IELMFATES/</drive><!--your files are located at $drive$case<-->
-        <case>BCI_2pft.IELMFATES</case> 
+        <drive>Xiulin_runs/</drive><!--your files are located at $drive$case<-->
+        <case>TwoSites-PreIndust-AllParams-ens-DBH10_bypft-002</case> 
         <n_runs>999</n_runs><!--Assumes these are 0-999<-->
-        <varlist>Date,FATES_GPP,H2OSOIvalue1,FATES_LEAF_H2OPOT_SZPF_10,FATES_LEAF_H2OPOT_SZPF_22,FATES_LEAF_H2OPOT_SZPF_10,FATES_LEAF_H2OPOT_SZPF_22</varlist> <!--Always start with Date <-->
-        <timestep>Month,Month,Month,DayMin,DayMin,DayMax,DayMax</timestep><!--Current options are Month, DayMin, DayMax<-->
-        <parameter_loc>FATES_Param_samples_bci.csv</parameter_loc>><!--File with parameter combination <-->
+        <varlist>Date,fates_basal_area</varlist> <!--Always start with Date <-->
+        <timestep>Month,PFTannMean</timestep><!--Current options are Month, DayMin, DayMax, PFTannMean<-->
+        <parameter_loc>fates-parameters-sampled.csv</parameter_loc>><!--File with parameter combination <-->
     </cleaning_metadata>
 
     <!-- Neural Network Configuration-->
@@ -22,10 +22,10 @@
 
     <!-- Emulator Metadata-->
     <emulator_metadata>
-        <save_name>CRAFT_BCI_Full</save_name>
-        <thres>0.03</thres>
+        <save_name>CRAFT_Xulin</save_name>
+        <thres>0.001</thres>
         <emulator_drive>data/Vars/</emulator_drive>
-        <fates_samples>FATES_Param_samples_bci_ml.csv</fates_samples><!--Should be in CRAFT main <-->
+        <fates_samples>fates-parameters-sampled.csv</fates_samples><!--Should be in CRAFT main <-->
         <model_type>rf</model_type><!--rf/nn--> 
         <nn_config>nn_config.csv</nn_config>
     </emulator_metadata>
@@ -33,13 +33,13 @@
     <!-- Emulator Settings-->
     <emulator_settings>
         <variable>
-            <var_name>[H2OSOIvalue1,PFT1_LWPMax,PFT1_LWPMin,PFT2_LWPMax,PFT2_LWPMin]</var_name>
-            <fates_runs>[H2OSOIvalue1MonthlyforML.csv,FATES_LEAF_H2OPOT_SZPF_10DailymaxforML.csv,FATES_LEAF_H2OPOT_SZPF_10DailyminforML.csv,FATES_LEAF_H2OPOT_SZPF_22DailymaxforMLV2.csv,FATES_LEAF_H2OPOT_SZPF_22DailyminforMLV2.csv]</fates_runs>
-            <xs>[5,5,5,5,5]</xs> <!--where are the variables pythonic x_start<-->
-            <xe>[45,45,45,45,45]</xe><!-- x_end<-->
-            <y_i>[3,3,3,3,3]</y_i><!--where is y<-->
-            <scaler>[1,1e-6,1e-6,1e-6,1e-6]</scaler><!-- scale_y<-->
-            <downsample>[1,1,.1,.1,.1]</downsample><!-- downsample very large projects on small computer. <-->
+            <var_name>[fates_basal_area]</var_name>
+            <fates_runs>[fates_basal_areaPFTannMean.csv]</fates_runs>
+            <xs>[2]</xs> <!--where are the variables pythonic x_start<-->
+            <xe>[24]</xe><!-- x_end<-->
+            <y_i>[1]</y_i><!--where is y<-->
+            <scaler>[1]</scaler><!-- scale_y<-->
+            <downsample>[1]</downsample><!-- downsample very large projects on small computer. <-->
         </variable>
     </emulator_settings>
 

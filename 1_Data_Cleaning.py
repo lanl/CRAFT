@@ -178,7 +178,7 @@ for var in subset_varlist[1:]:
     subset_varlist = [
     item for item, category in zip(varlist, timesteps) if category == "DayMax"
 ]
-subset_varlist.insert(0, "Date")
+#subset_varlist.insert(0, "Date")
 
 print(subset_varlist)
 print("Loading in files:")
@@ -207,7 +207,7 @@ for i in list(range(0,Nruns)):
 #print(df)
 print("Writing out variables for training:")
 samples["Model"]=list(range(1,len(samples)+1))
-
+print(subset_varlist)
 for var in subset_varlist[1:]:
     print(var)
     df2=pd.DataFrame()
@@ -223,3 +223,28 @@ for var in subset_varlist[1:]:
         sub1["year"]=sub1["Date"].dt.year
         df2=pd.concat([df2,sub1])
     df2.to_csv('data/Vars/'+var+'DailymaxforML.csv')
+
+
+subset_varlist = [
+    item for item, category in zip(varlist, timesteps) if category == "PFTannMean"
+]
+print(subset_varlist)
+for var in subset_varlist[0:]:
+    pdf3=pd.read_csv(DRIVE1+CASENAME+".csv")
+    Fullstack=pdf3.merge(samples, on=["case","ens_label"],how='left')
+    Fullstack["Year"]=Fullstack["time"].str.split('T', expand=True)[0].str.split('-', expand=True)[0]
+    Fullstack=Fullstack.loc[Fullstack["Year"].astype(int)>1950]
+    Fullstack2=Fullstack.groupby(['case', 'ens_label','pft',"Year"],as_index=False).max()
+    X_data = Fullstack2[['fates_basalarea','case','Year','pft', 'fates_rxfire_AB',
+        'p1_fates_leaf_vcmax25top', 'p2_fates_leaf_vcmax25top',
+        'p3_fates_leaf_vcmax25top', 'p4_fates_leaf_vcmax25top',
+        'p3_fates_allom_agb1', 'p1_fates_mort_freezetol',
+        'p2_fates_mort_freezetol', 'p3_fates_mort_freezetol',
+        'p4_fates_mort_freezetol', 'p1_fates_mort_scalar_coldstress',
+        'p2_fates_mort_scalar_coldstress', 'p3_fates_mort_scalar_coldstress',
+        'p4_fates_mort_scalar_coldstress', 'p1_fates_allom_blca_expnt_diff',
+        'p2_fates_allom_blca_expnt_diff', 'p3_fates_allom_blca_expnt_diff',
+        'p4_fates_allom_blca_expnt_diff', 'p1_fates_turnover_fnrt',
+        'p2_fates_turnover_fnrt', 'p4_fates_turnover_fnrt']]
+
+    X_data.to_csv('data/Vars/'+var+'PFTannMean.csv')
