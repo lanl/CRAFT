@@ -11,6 +11,8 @@ from config_utils import get_bayes_settings, get_emulator_metadata
 from bayes_functions import (
     log_prob, Loadmodels, CleanScaleObs, TestLL, AdaptiveMCMC, DREAMSampler
 )
+import warnings
+warnings.filterwarnings('ignore')
 
 # Set working directory to script location
 script_path = os.path.abspath(__file__)
@@ -55,7 +57,7 @@ print(f"  Output file: {output_file}")
 samples = pd.read_csv(samples_file)
 
 Emdir = "data/Models/"
-if model_type == "rf":
+if (model_type == "rf")|(model_type == "Xiulin_rf"):
     Varset = pd.read_csv("diag/FitOrder.csv")
 elif model_type=="nn":
     s_Varset = pd.Series(samples.columns.tolist())
@@ -64,45 +66,43 @@ elif model_type=="nn":
     ncols = 2 + len(samples.columns.tolist())
     Varset = pd.DataFrame({"r": list(range(0, len(s_Varset))), "0": s_Varset})
     print(Varset)
-elif model_type=="Xiulin_nn": ####needs to be a file
-    Varset = pd.Series(['case','Year','pft', 'fates_rxfire_AB',
-                   'p1_fates_leaf_vcmax25top', 'p2_fates_leaf_vcmax25top',
-                   'p3_fates_leaf_vcmax25top', 'p4_fates_leaf_vcmax25top',
-                   'p3_fates_allom_agb1', 'p1_fates_mort_freezetol',
-                   'p2_fates_mort_freezetol', 'p3_fates_mort_freezetol',
-                   'p4_fates_mort_freezetol', 'p1_fates_mort_scalar_coldstress',
-                   'p2_fates_mort_scalar_coldstress', 'p3_fates_mort_scalar_coldstress',
-                   'p4_fates_mort_scalar_coldstress', 'p1_fates_allom_blca_expnt_diff',
-                   'p2_fates_allom_blca_expnt_diff', 'p3_fates_allom_blca_expnt_diff',
-                   'p4_fates_allom_blca_expnt_diff', 'p1_fates_turnover_fnrt',
-                   'p2_fates_turnover_fnrt', 'p4_fates_turnover_fnrt'])
-    Varset_dia = ['case','Year','dia', 'fates_rxfire_AB',
-                   'p1_fates_leaf_vcmax25top', 'p2_fates_leaf_vcmax25top',
-                   'p3_fates_leaf_vcmax25top', 'p4_fates_leaf_vcmax25top',
-                   'p3_fates_allom_agb1', 'p1_fates_mort_freezetol',
-                   'p2_fates_mort_freezetol', 'p3_fates_mort_freezetol',
-                   'p4_fates_mort_freezetol', 'p1_fates_mort_scalar_coldstress',
-                   'p2_fates_mort_scalar_coldstress', 'p3_fates_mort_scalar_coldstress',
-                   'p4_fates_mort_scalar_coldstress', 'p1_fates_allom_blca_expnt_diff',
-                   'p2_fates_allom_blca_expnt_diff', 'p3_fates_allom_blca_expnt_diff',
-                   'p4_fates_allom_blca_expnt_diff', 'p1_fates_turnover_fnrt',
-                   'p2_fates_turnover_fnrt', 'p4_fates_turnover_fnrt']
+elif (model_type == "Xiulin_nn"): ####needs to be a file
+    Varset = pd.read_csv("diag/FitOrder.csv")
     print("yes")
 else: 
     print("Model Type not support")
 
-if model_type=="Xiulin_nn":
+if  (model_type == "Xiulin_nn"):
     indices_to_delete = np.where(Varset == "case")[0]
     Varset2 = np.delete(Varset, indices_to_delete)
     indices_to_delete = np.where(Varset2 == "Year")[0]
     Varset2 = np.delete(Varset2, indices_to_delete)
     indices_to_delete = np.where(Varset2 == "pft")[0]
     Varset2 = np.delete(Varset2, indices_to_delete)
+    indices_to_delete = np.where(Varset2 == "dia")[0]
+    Varset2 = np.delete(Varset2, indices_to_delete)
     samples_sub = samples[Varset2]
     scaler_pars = StandardScaler().fit(samples_sub.values)
     samples_scale = scaler_pars.transform(samples_sub)
-    Names = pd.concat([pd.Series(["case","Year", "pft"]),pd.Series(samples_sub.columns) ])
-    Names2="NA"
+    Names = pd.concat([pd.Series(["case","Year", "pft"]),pd.Series(samples_sub.columns)])
+    Names2= pd.concat([pd.Series(["case","dia", "pft"]),pd.Series(samples_sub.columns)])
+       #### Needs to be seperate for dia 
+elif(model_type == "Xiulin_rf"):
+    Varset = Varset.iloc[:, 1].values
+    indices_to_delete = np.where(Varset == "case")[0]
+    Varset2 = np.delete(Varset, indices_to_delete)
+    indices_to_delete = np.where(Varset2 == "Year")[0]
+    Varset2 = np.delete(Varset2, indices_to_delete)
+    indices_to_delete = np.where(Varset2 == "pft")[0]
+    Varset2 = np.delete(Varset2, indices_to_delete)
+    indices_to_delete = np.where(Varset2 == "dbh")[0]
+    Varset2 = np.delete(Varset2, indices_to_delete)
+    print(Varset2)
+    samples_sub = samples[Varset2]
+    scaler_pars = StandardScaler().fit(samples_sub.values)
+    samples_scale = scaler_pars.transform(samples_sub)
+    Names = pd.concat([pd.Series(["case","Year", "pft","dia"]),pd.Series(samples_sub.columns)])
+    Names2=np.nan 
        #### Needs to be seperate for dia 
 else:
     # Extract variable names
@@ -115,14 +115,15 @@ else:
     Varset2 = np.delete(Varset2, indices_to_delete)
     indices_to_delete = np.where(Varset2 == "DOY")[0]
     Varset2 = np.delete(Varset2, indices_to_delete)
+    # Prepare parameter scaling
+    samples_sub = samples[Varset2]
+    scaler_pars = StandardScaler().fit(samples_sub.values)
+    samples_scale = scaler_pars.transform(samples_sub)
+    Names = pd.concat([pd.Series(samples_sub.columns), pd.Series(["year", "month"])])
+    Names2 = pd.concat([pd.Series(samples_sub.columns), pd.Series(["year", "DOY"])])
+
 print(f"\nParameters to estimate: {Varset2}")
 
-# Prepare parameter scaling
-samples_sub = samples[Varset2]
-scaler_pars = StandardScaler().fit(samples_sub.values)
-samples_scale = scaler_pars.transform(samples_sub)
-Names = pd.concat([pd.Series(samples_sub.columns), pd.Series(["year", "month"])])
-Names2 = pd.concat([pd.Series(samples_sub.columns), pd.Series(["year", "DOY"])])
 
 # Load and prepare observations
 Obs_save = pd.read_csv(obsfile).iloc[:, 1:]

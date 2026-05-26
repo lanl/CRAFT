@@ -10,9 +10,11 @@ from scipy.stats import norm
 from sklearn.preprocessing import StandardScaler
 import joblib
 import os
+import warnings
 import tensorflow as tf
 from typing import Callable, Tuple, List
-
+import warnings
+warnings.filterwarnings('ignore')
 
 def log_prob(regrli, scarlerli, x, scaler_pars, Varset2, samples, Model_List, Scaler_List, 
              Obs_List, Obs_save, Varset, Names, Names2, obli):
@@ -64,100 +66,100 @@ def log_prob(regrli, scarlerli, x, scaler_pars, Varset2, samples, Model_List, Sc
 
     # Initialize the output
     DFout = pd.DataFrame({})
-    
-    # Loop through all our model types
-    for i in list(range(0, len(Obs_List))):
-        ob_set = Obs_save[Obs_save["Set"] == Obs_List[i]]
-        #print(ob_set)
-        obscaler = obli[Obs_List[i]]
-        #print(Obs_List[i])
-        # Load new model/scaler
-        if (ob_set["Date"].iloc[0]=="MeanPFT"):
-            model_info = regrli[Model_List[0]]  
-            regr = model_info['model']
-            model_type = model_info['type']
-            scaler = scarlerli[Scaler_List[0]]
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=UserWarning)
+        # Loop through all our model types
+        for i in list(range(0, len(Obs_List))):
+            ob_set = Obs_save[Obs_save["Set"] == Obs_List[i]]
+            obscaler = obli[Obs_List[i]]
+            # Load new model/scaler
+            if (ob_set["Date"].iloc[0]=="MeanPFT"):
+                model_info = regrli[Model_List[0]]  
+                regr = model_info['model']
+                model_type = model_info['type']
+                scaler = scarlerli[Scaler_List[0]]
+            elif (ob_set["Date"].iloc[0]=="MeanDIA"):
+                model_info = regrli[Model_List[1]]  
+                regr = model_info['model']
+                model_type = model_info['type']
+                scaler = scarlerli[Scaler_List[1]]
+            else:
+                model_info = regrli[Model_List[i]]  
+                regr = model_info['model']
+                model_type = model_info['type']
+                scaler = scarlerli[Scaler_List[i]]  
+            # Dynamically check for column
+            if (ob_set["Date"].iloc[0]=="MeanPFT"):
+                my=ob_set[["Year","pft","dbh","case"]].reset_index(drop=True)
+                x_1_run_set = pd.concat([pd.concat([x] * len(my)).reset_index(drop=True), my], axis=1)
+                indices_to_delete = np.where(Varset == "dbh")[0]
+                VarsetPFT = np.delete(Varset, indices_to_delete)
+                one=x_1_run_set[VarsetPFT]
+            elif (ob_set["Date"].iloc[0]=="MeanDIA"):
+                my=ob_set[["Year","pft","dbh","case"]].reset_index(drop=True)
+                x_1_run_set = pd.concat([pd.concat([x] * len(my)).reset_index(drop=True), my], axis=1)
+                indices_to_delete = np.where(Varset == "pft")[0]
+                VarsetDia = np.delete(Varset, indices_to_delete)
+                one=x_1_run_set[VarsetDia]
 
-        else:
-            model_info = regrli[Model_List[i]]  
-            regr = model_info['model']
-            model_type = model_info['type']
-            scaler = scarlerli[Scaler_List[i]]
+            elif (Obs_List[i] == "LWP_min") | (Obs_List[i] == "LWP_max"):
+                my = ob_set[["year", "DOY"]].reset_index(drop=True)
+                my["Year"] = my["year"]
+                my = my[["year", "DOY"]]
+                ob_set = ob_set.sort_values(["year", "DOY"])
+                x_1_run_set = pd.concat([pd.concat([x] * len(my)).reset_index(), my], axis=1)
+                one = x_1_run_set.iloc[:, 1:].sort_values(["year", "DOY"])
+                #one = one.set_axis(Names2, axis=1)
+                indices_to_delete = np.where(Varset == "month")[0]
+                VarsetDay = np.delete(Varset, indices_to_delete)
+                one = one[VarsetDay]
+            else: 
+                my = ob_set[["year", "month"]].reset_index(drop=True)
+                ob_set = ob_set.sort_values(["year", "month"])
+                x_1_run_set = pd.concat([pd.concat([x] * len(my)).reset_index(), my], axis=1)
+                one = x_1_run_set.iloc[:, 1:].sort_values(["year", "month"])
+                one["Year"]=one["year"]
+                #print(one)
+                indices_to_delete = np.where(Varset == "DOY")[0]
+                VarsetMonth = np.delete(Varset, indices_to_delete)
+                #print(VarsetMonth)
+                one = one[VarsetMonth]
+                
+            one = scaler.transform(one)
             
-     
-        # Dynamically check for column
-        if (ob_set["Date"].iloc[0]=="MeanPFT"):
-            my=ob_set[["Year","pft","case"]].reset_index(drop=True)
-            x_1_run_set = pd.concat([pd.concat([x] * len(my)).reset_index(drop=True), my], axis=1)
-            one=x_1_run_set[['case','Year','pft', 'fates_rxfire_AB',
-                   'p1_fates_leaf_vcmax25top', 'p2_fates_leaf_vcmax25top',
-                   'p3_fates_leaf_vcmax25top', 'p4_fates_leaf_vcmax25top',
-                   'p3_fates_allom_agb1', 'p1_fates_mort_freezetol',
-                   'p2_fates_mort_freezetol', 'p3_fates_mort_freezetol',
-                   'p4_fates_mort_freezetol', 'p1_fates_mort_scalar_coldstress',
-                   'p2_fates_mort_scalar_coldstress', 'p3_fates_mort_scalar_coldstress',
-                   'p4_fates_mort_scalar_coldstress', 'p1_fates_allom_blca_expnt_diff',
-                   'p2_fates_allom_blca_expnt_diff', 'p3_fates_allom_blca_expnt_diff',
-                   'p4_fates_allom_blca_expnt_diff', 'p1_fates_turnover_fnrt',
-                   'p2_fates_turnover_fnrt', 'p4_fates_turnover_fnrt']]
-        elif (Obs_List[i] == "LWP_min") | (Obs_List[i] == "LWP_max"):
-            my = ob_set[["year", "DOY"]].reset_index(drop=True)
-            my["Year"] = my["year"]
-            my = my[["year", "DOY"]]
-            ob_set = ob_set.sort_values(["year", "DOY"])
-            x_1_run_set = pd.concat([pd.concat([x] * len(my)).reset_index(), my], axis=1)
-            one = x_1_run_set.iloc[:, 1:].sort_values(["year", "DOY"])
-            #one = one.set_axis(Names2, axis=1)
-            indices_to_delete = np.where(Varset == "month")[0]
-            VarsetDay = np.delete(Varset, indices_to_delete)
-            one = one[VarsetDay]
-        else: 
-            my = ob_set[["year", "month"]].reset_index(drop=True)
-            ob_set = ob_set.sort_values(["year", "month"])
-            x_1_run_set = pd.concat([pd.concat([x] * len(my)).reset_index(), my], axis=1)
-            one = x_1_run_set.iloc[:, 1:].sort_values(["year", "month"])
-            one["Year"]=one["year"]
-            #print(one)
-            indices_to_delete = np.where(Varset == "DOY")[0]
-            VarsetMonth = np.delete(Varset, indices_to_delete)
-            #print(VarsetMonth)
-            one = one[VarsetMonth]
-            
-        one = scaler.transform(one)
+            # Make predictions based on model type
+            if model_type == "rf":
+                predicty = regr.predict(one)
+            else:  # Neural network
+                # Convert to tensor for TF models
+                one_tensor = tf.convert_to_tensor(one.astype('float32'))
+                predicty = regr.predict(one_tensor, verbose=0).flatten()
+                #print(predicty)
+                predicty[predicty < 0] = 0
+                
+            if (Obs_List[i] == "LWP_min") | (Obs_List[i] == "LWP_max"):
+                predicty = np.abs(predicty)
+                
+            predicty = obscaler.transform(np.log(predicty + 0.0001).reshape(-1, 1))
         
-        # Make predictions based on model type
-        if model_type == "rf":
-            predicty = regr.predict(one)
-        else:  # Neural network
-            # Convert to tensor for TF models
-            one_tensor = tf.convert_to_tensor(one.astype('float32'))
-            predicty = regr.predict(one_tensor, verbose=0).flatten()
-            #print(predicty)
-            predicty[predicty < 0] = 0
-            
-        if (Obs_List[i] == "LWP_min") | (Obs_List[i] == "LWP_max"):
-            predicty = np.abs(predicty)
-            
-        predicty = obscaler.transform(np.log(predicty + 0.0001).reshape(-1, 1))
-      
-        Frame = pd.concat([ob_set.reset_index(drop=True), 
-                          pd.Series(predicty.flatten(), name="sim").reset_index(drop=True)], axis=1)
-        if (Obs_List[i] == "LWPmin") | (Obs_List[i] == "LWPmax"):
-            Frame = Frame.sample(n=169, random_state=55)
-            
-        # This is a dataframe with the obs/sim/ in it
-        DFout = pd.concat([DFout, Frame])
-       # print(Frame)
-    # Calculate full log likelihoo
-    #print(DFout)
-    ll1 = np.sum(norm.logpdf(DFout['sim'], loc=DFout['obs'], scale=DFout['error']))
-    
-    # Check physical possibility/Values are within the bounds of initial sample
-    p = sum([1 for t in range(len(x.columns)) 
-             if (x.iloc[0, t] < samples[[x.columns[t]]].min().values) or 
-                (x.iloc[0, t] > samples[[x.columns[t]]].max().values)])
-    if p >= 1:
-        ll1 = -np.inf
+            Frame = pd.concat([ob_set.reset_index(drop=True), 
+                            pd.Series(predicty.flatten(), name="sim").reset_index(drop=True)], axis=1)
+            if (Obs_List[i] == "LWPmin") | (Obs_List[i] == "LWPmax"):
+                Frame = Frame.sample(n=169, random_state=55)
+                
+            # This is a dataframe with the obs/sim/ in it
+            DFout = pd.concat([DFout, Frame])
+        # print(Frame)
+        # Calculate full log likelihoo
+        #print(DFout)
+        ll1 = np.sum(norm.logpdf(DFout['sim'], loc=DFout['obs'], scale=DFout['error']))
+        
+        # Check physical possibility/Values are within the bounds of initial sample
+        p = sum([1 for t in range(len(x.columns)) 
+                if (x.iloc[0, t] < samples[[x.columns[t]]].min().values) or 
+                    (x.iloc[0, t] > samples[[x.columns[t]]].max().values)])
+        if p >= 1:
+            ll1 = -np.inf
         
     return ll1
 
@@ -275,15 +277,7 @@ def Loadmodels(LOADIN, EmDir, Model_List, Scaler_List, model_type):
             model_loaded = False
             
             # Try to load neural network model with .keras extension if it exists
-            if model_type == "nn":
-                try:
-                    print(f"Loading neural network model: {nn_model_path}")
-                    model = tf.keras.models.load_model(nn_model_path)
-                    regrli[Model_List[i]] = {'model': model, 'type': 'nn'}
-                    model_loaded = True
-                except Exception as e:
-                    print(f"Failed to load neural network model: {e}")
-            if model_type == "Xiulin_nn":
+            if (model_type == "nn")| (model_type == "Xiulin_nn"):
                 try:
                     print(f"Loading neural network model: {nn_model_path}")
                     model = tf.keras.models.load_model(nn_model_path)
@@ -293,7 +287,7 @@ def Loadmodels(LOADIN, EmDir, Model_List, Scaler_List, model_type):
                     print(f"Failed to load neural network model: {e}")
             
             # Try to load Random Forest model if NN didn't work or doesn't exist
-            if model_type == "rf":
+            if(model_type == "rf")| (model_type == "Xiulin_rf"):
                 try:
                     print(f"Loading Random Forest model: {rf_model_path}")
                     model = joblib.load(rf_model_path)
@@ -333,7 +327,7 @@ def CleanScaleObs(Obs_save, list1,model_type):
     tuple : (Obs_save, obli) - cleaned observations and scalers dictionary
     """
     Obs_save['obs']=Obs_save['obs'].astype("float")
-    if  model_type == "Xiulin_nn":
+    if  (model_type == "Xiulin_rf")| (model_type == "Xiulin_nn"):
         print("nodate")
     else:
         Obs_save = Obs_save.dropna()
@@ -347,6 +341,7 @@ def CleanScaleObs(Obs_save, list1,model_type):
     obli = {}
     #print(Obs_save)
     for var in list1:
+        print(var)
         # Handle possible zeros or negatives for log
         obs_vals = np.array(Obs_save.loc[Obs_save["Set"] == var, 'obs'])
         # Add small value to avoid log(0)
