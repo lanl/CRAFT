@@ -742,9 +742,9 @@ class DREAMSampler:
             
             # Progress reporting
             if (iteration + 1) % 100 == 0:
-                accept_rate = np.mean(accepted_per_iteration[max(0, iteration-499):iteration+1])
+                accept_rate = np.mean(accepted_per_iteration[max(0, iteration-499):iteration+1])*100
                 print(f"Iteration {iteration + 1}/{n_iterations} - "
-                      f"Acceptance rate: {accept_rate:.3f} - "
+                      f"Acceptance percentage: {accept_rate:.3f} - "
                       f"Mean log-posterior: {np.mean(self.log_posteriors):.2f}")
         
         # Extract post-burnin samples with thinning
