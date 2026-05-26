@@ -29,6 +29,7 @@ print("="*70)
 Settings = get_bayes_settings()
 
 initialpos = int(Settings.loc['initialpos', 'value'])
+model_type = Settings.loc['model_type', 'value']
 steps = int(Settings.loc['steps', 'value'])
 adapt_interval = int(Settings.loc['adapt_interval', 'value'])
 burnin = int(Settings.loc['burnin', 'value'])
@@ -46,15 +47,6 @@ print(f"  Observations file: {obsfile}")
 print(f"  Output file: {output_file}")
 
 # Load model configuration to determine model types
-try:
-    Meta = get_emulator_metadata()
-    model_type = "rf"  # default
-    if "model_type" in Meta["Var"].values:
-        model_type = Meta.loc[Meta["Var"]=='model_type']['Path'].values[0]
-    print(f"  Model type: {model_type}")
-except:
-    model_type = "rf"
-    print(f"  Model type: {model_type} (default)")
 
 # ============================================================================
 # LOAD DATA
@@ -65,24 +57,64 @@ samples = pd.read_csv(samples_file)
 Emdir = "data/Models/"
 if model_type == "rf":
     Varset = pd.read_csv("diag/FitOrder.csv")
-else: 
+elif model_type=="nn":
     s_Varset = pd.Series(samples.columns.tolist())
     s_Varset = pd.concat([s_Varset, pd.Series(["month", "year"])])
     print(s_Varset)
     ncols = 2 + len(samples.columns.tolist())
     Varset = pd.DataFrame({"r": list(range(0, len(s_Varset))), "0": s_Varset})
     print(Varset)
+elif model_type=="Xiulin_nn": ####needs to be a file
+    Varset = pd.Series(['case','Year','pft', 'fates_rxfire_AB',
+                   'p1_fates_leaf_vcmax25top', 'p2_fates_leaf_vcmax25top',
+                   'p3_fates_leaf_vcmax25top', 'p4_fates_leaf_vcmax25top',
+                   'p3_fates_allom_agb1', 'p1_fates_mort_freezetol',
+                   'p2_fates_mort_freezetol', 'p3_fates_mort_freezetol',
+                   'p4_fates_mort_freezetol', 'p1_fates_mort_scalar_coldstress',
+                   'p2_fates_mort_scalar_coldstress', 'p3_fates_mort_scalar_coldstress',
+                   'p4_fates_mort_scalar_coldstress', 'p1_fates_allom_blca_expnt_diff',
+                   'p2_fates_allom_blca_expnt_diff', 'p3_fates_allom_blca_expnt_diff',
+                   'p4_fates_allom_blca_expnt_diff', 'p1_fates_turnover_fnrt',
+                   'p2_fates_turnover_fnrt', 'p4_fates_turnover_fnrt'])
+    Varset_dia = ['case','Year','dia', 'fates_rxfire_AB',
+                   'p1_fates_leaf_vcmax25top', 'p2_fates_leaf_vcmax25top',
+                   'p3_fates_leaf_vcmax25top', 'p4_fates_leaf_vcmax25top',
+                   'p3_fates_allom_agb1', 'p1_fates_mort_freezetol',
+                   'p2_fates_mort_freezetol', 'p3_fates_mort_freezetol',
+                   'p4_fates_mort_freezetol', 'p1_fates_mort_scalar_coldstress',
+                   'p2_fates_mort_scalar_coldstress', 'p3_fates_mort_scalar_coldstress',
+                   'p4_fates_mort_scalar_coldstress', 'p1_fates_allom_blca_expnt_diff',
+                   'p2_fates_allom_blca_expnt_diff', 'p3_fates_allom_blca_expnt_diff',
+                   'p4_fates_allom_blca_expnt_diff', 'p1_fates_turnover_fnrt',
+                   'p2_fates_turnover_fnrt', 'p4_fates_turnover_fnrt']
+    print("yes")
+else: 
+    print("Model Type not support")
 
-# Extract variable names
-Varset = Varset.iloc[:, 1].values
+if model_type=="Xiulin_nn":
+    indices_to_delete = np.where(Varset == "case")[0]
+    Varset2 = np.delete(Varset, indices_to_delete)
+    indices_to_delete = np.where(Varset2 == "Year")[0]
+    Varset2 = np.delete(Varset2, indices_to_delete)
+    indices_to_delete = np.where(Varset2 == "pft")[0]
+    Varset2 = np.delete(Varset2, indices_to_delete)
+    samples_sub = samples[Varset2]
+    scaler_pars = StandardScaler().fit(samples_sub.values)
+    samples_scale = scaler_pars.transform(samples_sub)
+    Names = pd.concat([pd.Series(["case","Year", "pft"]),pd.Series(samples_sub.columns) ])
+    Names2="NA"
+       #### Needs to be seperate for dia 
+else:
+    # Extract variable names
+    Varset = Varset.iloc[:, 1].values
 
-# Remove time variables
-indices_to_delete = np.where(Varset == "month")[0]
-Varset2 = np.delete(Varset, indices_to_delete)
-indices_to_delete = np.where(Varset2 == "year")[0]
-Varset2 = np.delete(Varset2, indices_to_delete)
-indices_to_delete = np.where(Varset2 == "DOY")[0]
-Varset2 = np.delete(Varset2, indices_to_delete)
+    # Remove time variables
+    indices_to_delete = np.where(Varset == "month")[0]
+    Varset2 = np.delete(Varset, indices_to_delete)
+    indices_to_delete = np.where(Varset2 == "year")[0]
+    Varset2 = np.delete(Varset2, indices_to_delete)
+    indices_to_delete = np.where(Varset2 == "DOY")[0]
+    Varset2 = np.delete(Varset2, indices_to_delete)
 print(f"\nParameters to estimate: {Varset2}")
 
 # Prepare parameter scaling
@@ -94,11 +126,12 @@ Names2 = pd.concat([pd.Series(samples_sub.columns), pd.Series(["year", "DOY"])])
 
 # Load and prepare observations
 Obs_save = pd.read_csv(obsfile).iloc[:, 1:]
+print(Obs_save)
 print(f"\nObservation data loaded:")
 print(Obs_save.head())
-Obs_save = Obs_save.dropna()
-Obs_save, obli = CleanScaleObs(Obs_save, list1)
-
+#Obs_save = Obs_save.dropna()
+Obs_save, obli = CleanScaleObs(Obs_save, list1,model_type)
+print(Obs_save)
 dims = len(Varset2)
 S = np.repeat(1, dims)
 

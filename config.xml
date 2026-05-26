@@ -36,7 +36,7 @@
             <var_name>[fates_basal_area,fates_nplant]</var_name>
             <fates_runs>[fates_basal_areaPFTannMean.csv,fates_nplantPFTannMean.csv]</fates_runs>
             <xs>[2,2]</xs> <!--where are the variables pythonic x_start<-->
-            <xe>[24,24]</xe><!-- x_end<-->
+            <xe>[26,26]</xe><!-- x_end<-->
             <y_i>[1,1]</y_i><!--where is y<-->
             <scaler>[1,1]</scaler><!-- scale_y<-->
             <downsample>[1,1]</downsample><!-- downsample very large projects on small computer. <-->
@@ -46,25 +46,28 @@
     <!-- Bayes Settings -->
     <bayes_settings>
         <initialpos>45</initialpos>
+        <model_type>Xiulin_nn</model_type>
         <steps>2000</steps>
         <adapt_interval>1000</adapt_interval>
-        <burnin>1000</burnin>
-        <model_list>['CRAFT_practice_FullH2OSOIvalue1','CRAFT_practice_FullPFT1_LWPMin','CRAFT_practice_FullPFT2_LWPMin']</model_list>
-        <scaler_list>['CRAFT_practice_FullH2OSOIvalue1_Scalar','CRAFT_practice_FullPFT1_LWPMin_Scalar','CRAFT_practice_FullPFT2_LWPMin_Scalar']</scaler_list>
-        <obs_list>["H2OSOI1",'LWP_min','LWP_min']</obs_list>
-        <list1>["H2OSOI1",'LWP_min','LWP_min']</list1>
-        <samples_file>FATES_Param_samples_slz_forML.csv</samples_file>
-        <obsfile>Example_Obs_data/SLZ_Observations.csv</obsfile>
-        <output_file>data/MCMC_runs/TestSLZ.csv</output_file>        
+        <burnin>200</burnin>
+        <model_list>['CRAFT_Xulinfates_basal_area']</model_list>
+        <scaler_list>['CRAFT_Xulinfates_basal_area_Scalar']</scaler_list>
+        <obs_list>["PFT1_BA_case1","PFT2_BA_case1","PFT3_BA_case1","PFT4_BA_case1",
+                      "PFT1_BA_case2","PFT2_BA_case2","PFT3_BA_case2","PFT4_BA_case2"]</obs_list>
+        <list1>["PFT1_BA_case1","PFT2_BA_case1","PFT3_BA_case1","PFT4_BA_case1",
+                      "PFT1_BA_case2","PFT2_BA_case2","PFT3_BA_case2","PFT4_BA_case2"]</list1>
+        <samples_file>fates-parameters-sampled.csv</samples_file>
+        <obsfile>Xiulin_Observation.csv</obsfile>
+        <output_file>data/MCMC_runs/TestXiulin.csv</output_file>        
         <!-- MCMC Sampler Selection: 'adaptive' or 'dream' -->
         <sampler_method>dream</sampler_method>
         <!-- DREAM-specific settings (only used when sampler_method='dream') -->
-        <dream_n_chains>5</dream_n_chains>
-        <dream_delta>2</dream_delta>
-        <dream_c>0.1</dream_c>
+        <dream_n_chains>3</dream_n_chains>
+        <dream_delta>1 </dream_delta>
+        <dream_c>0.5</dream_c>
         <dream_c_star>1e-12</dream_c_star>
         <dream_n_crossover>3</dream_n_crossover>
-        <dream_p_gamma_unity>0.2</dream_p_gamma_unity>
+        <dream_p_gamma_unity>0.5</dream_p_gamma_unity>
         <dream_thin>1</dream_thin>
     </bayes_settings>
 </configuration>

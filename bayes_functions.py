@@ -66,20 +66,41 @@ def log_prob(regrli, scarlerli, x, scaler_pars, Varset2, samples, Model_List, Sc
     DFout = pd.DataFrame({})
     
     # Loop through all our model types
-    for i in list(range(0, len(Model_List))):
-
-        # Load new model/scaler
-        model_info = regrli[Model_List[i]]
-        
-        regr = model_info['model']
-        model_type = model_info['type']
-        scaler = scarlerli[Scaler_List[i]]
-        obscaler = obli[Obs_List[i]]
-        
+    for i in list(range(0, len(Obs_List))):
         ob_set = Obs_save[Obs_save["Set"] == Obs_List[i]]
+        #print(ob_set)
+        obscaler = obli[Obs_List[i]]
         #print(Obs_List[i])
+        # Load new model/scaler
+        if (ob_set["Date"].iloc[0]=="MeanPFT"):
+            model_info = regrli[Model_List[0]]  
+            regr = model_info['model']
+            model_type = model_info['type']
+            scaler = scarlerli[Scaler_List[0]]
+
+        else:
+            model_info = regrli[Model_List[i]]  
+            regr = model_info['model']
+            model_type = model_info['type']
+            scaler = scarlerli[Scaler_List[i]]
+            
+     
         # Dynamically check for column
-        if (Obs_List[i] == "LWP_min") | (Obs_List[i] == "LWP_max"):
+        if (ob_set["Date"].iloc[0]=="MeanPFT"):
+            my=ob_set[["Year","pft","case"]].reset_index(drop=True)
+            x_1_run_set = pd.concat([pd.concat([x] * len(my)).reset_index(drop=True), my], axis=1)
+            one=x_1_run_set[['case','Year','pft', 'fates_rxfire_AB',
+                   'p1_fates_leaf_vcmax25top', 'p2_fates_leaf_vcmax25top',
+                   'p3_fates_leaf_vcmax25top', 'p4_fates_leaf_vcmax25top',
+                   'p3_fates_allom_agb1', 'p1_fates_mort_freezetol',
+                   'p2_fates_mort_freezetol', 'p3_fates_mort_freezetol',
+                   'p4_fates_mort_freezetol', 'p1_fates_mort_scalar_coldstress',
+                   'p2_fates_mort_scalar_coldstress', 'p3_fates_mort_scalar_coldstress',
+                   'p4_fates_mort_scalar_coldstress', 'p1_fates_allom_blca_expnt_diff',
+                   'p2_fates_allom_blca_expnt_diff', 'p3_fates_allom_blca_expnt_diff',
+                   'p4_fates_allom_blca_expnt_diff', 'p1_fates_turnover_fnrt',
+                   'p2_fates_turnover_fnrt', 'p4_fates_turnover_fnrt']]
+        elif (Obs_List[i] == "LWP_min") | (Obs_List[i] == "LWP_max"):
             my = ob_set[["year", "DOY"]].reset_index(drop=True)
             my["Year"] = my["year"]
             my = my[["year", "DOY"]]
@@ -111,6 +132,7 @@ def log_prob(regrli, scarlerli, x, scaler_pars, Varset2, samples, Model_List, Sc
             # Convert to tensor for TF models
             one_tensor = tf.convert_to_tensor(one.astype('float32'))
             predicty = regr.predict(one_tensor, verbose=0).flatten()
+            #print(predicty)
             predicty[predicty < 0] = 0
             
         if (Obs_List[i] == "LWP_min") | (Obs_List[i] == "LWP_max"):
@@ -126,8 +148,9 @@ def log_prob(regrli, scarlerli, x, scaler_pars, Varset2, samples, Model_List, Sc
         # This is a dataframe with the obs/sim/ in it
         DFout = pd.concat([DFout, Frame])
        # print(Frame)
-    # Calculate full log likelihood
-    ll1 = np.sum(norm.logpdf(DFout['sim'], loc=DFout['obs'], scale=5.0))
+    # Calculate full log likelihoo
+    #print(DFout)
+    ll1 = np.sum(norm.logpdf(DFout['sim'], loc=DFout['obs'], scale=DFout['error']*.1))
     
     # Check physical possibility/Values are within the bounds of initial sample
     p = sum([1 for t in range(len(x.columns)) 
@@ -260,6 +283,14 @@ def Loadmodels(LOADIN, EmDir, Model_List, Scaler_List, model_type):
                     model_loaded = True
                 except Exception as e:
                     print(f"Failed to load neural network model: {e}")
+            if model_type == "Xiulin_nn":
+                try:
+                    print(f"Loading neural network model: {nn_model_path}")
+                    model = tf.keras.models.load_model(nn_model_path)
+                    regrli[Model_List[i]] = {'model': model, 'type': 'nn'}
+                    model_loaded = True
+                except Exception as e:
+                    print(f"Failed to load neural network model: {e}")
             
             # Try to load Random Forest model if NN didn't work or doesn't exist
             if model_type == "rf":
@@ -286,7 +317,7 @@ def Loadmodels(LOADIN, EmDir, Model_List, Scaler_List, model_type):
     return None, None
 
 
-def CleanScaleObs(Obs_save, list1):
+def CleanScaleObs(Obs_save, list1,model_type):
     """
     Clean and scale observation data
     
@@ -301,14 +332,20 @@ def CleanScaleObs(Obs_save, list1):
     --------
     tuple : (Obs_save, obli) - cleaned observations and scalers dictionary
     """
-    Obs_save = Obs_save.dropna()
-    Obs_save['Date'] = pd.to_datetime(Obs_save["Date"])
-    Obs_save["year"] = Obs_save["Date"].dt.year
-    Obs_save["month"] = Obs_save["Date"].dt.month
-    Obs_save["DOY"] = Obs_save["Date"].dt.dayofyear
+    Obs_save['obs']=Obs_save['obs'].astype("float")
+    if  model_type == "Xiulin_nn":
+        print("nodate")
+    else:
+        Obs_save = Obs_save.dropna()
+        Obs_save['Date'] = pd.to_datetime(Obs_save["Date"])
+        Obs_save["year"] = Obs_save["Date"].dt.year
+        Obs_save["month"] = Obs_save["Date"].dt.month
+        Obs_save["DOY"] = Obs_save["Date"].dt.dayofyear
+
 
     # Dynamically create scalers and scale for all variables in list1
     obli = {}
+    #print(Obs_save)
     for var in list1:
         # Handle possible zeros or negatives for log
         obs_vals = np.array(Obs_save.loc[Obs_save["Set"] == var, 'obs'])
@@ -317,7 +354,6 @@ def CleanScaleObs(Obs_save, list1):
         scaler = StandardScaler().fit(obs_vals)
         Obs_save.loc[Obs_save["Set"] == var, 'obs'] = scaler.transform(obs_vals)
         obli[var] = scaler
-        
     return Obs_save, obli
 
 

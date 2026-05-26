@@ -154,7 +154,7 @@ def get_bayes_settings():
     
     data = {
         'parameter': [
-            'initialpos', 'steps', 'adapt_interval', 'burnin',
+            'initialpos','model_type', 'steps', 'adapt_interval', 'burnin',
             'Model_List', 'Scaler_List', 'Obs_List', 'list1',
             'samples_file', 'obsfile', 'output_file', 'sampler_method',
             'dream_n_chains', 'dream_delta', 'dream_c', 'dream_c_star',
@@ -162,6 +162,7 @@ def get_bayes_settings():
         ],
         'value': [
             settings.find('initialpos').text,
+            settings.find('model_type').text,
             settings.find('steps').text,
             settings.find('adapt_interval').text,
             settings.find('burnin').text,
