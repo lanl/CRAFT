@@ -83,7 +83,7 @@ def build_nn_model(input_shape, layer_sizes=[64, 32, 1], activation='relu', opti
         model.add(tf.keras.layers.Dense(size, activation=activation))
     
     # Add output layer (no activation for regression tasks)
-    model.add(tf.keras.layers.Dense(layer_sizes[-1],activation=clip_above_zero))
+    model.add(tf.keras.layers.Dense(layer_sizes[-1]))
     
     # Compile the model
     model.compile(

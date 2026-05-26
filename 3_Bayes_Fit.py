@@ -126,7 +126,7 @@ Names2 = pd.concat([pd.Series(samples_sub.columns), pd.Series(["year", "DOY"])])
 
 # Load and prepare observations
 Obs_save = pd.read_csv(obsfile).iloc[:, 1:]
-print(Obs_save)
+#print(Obs_save)
 print(f"\nObservation data loaded:")
 print(Obs_save.head())
 #Obs_save = Obs_save.dropna()

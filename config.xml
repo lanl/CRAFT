@@ -7,7 +7,7 @@
         <n_runs>999</n_runs><!--Assumes these are 0-999<-->
         <varlist>Date,fates_basal_area,fates_nplant</varlist> <!--Always start with Date <-->
         <timestep>Month,PFTannMax,DIAannMax</timestep><!--Current options are Month, DayMin, DayMax, PFTannMean<-->
-        <parameter_loc>fates-parameters-sampled.csv</parameter_loc>><!--File with parameter combination <-->
+        <parameter_loc>fates-parameters-sampled.csv</parameter_loc><!--File with parameter combination <-->
     </cleaning_metadata>
 
     <!-- Neural Network Configuration-->
@@ -64,10 +64,10 @@
         <!-- DREAM-specific settings (only used when sampler_method='dream') -->
         <dream_n_chains>3</dream_n_chains>
         <dream_delta>1 </dream_delta>
-        <dream_c>0.5</dream_c>
+        <dream_c>0.01</dream_c>
         <dream_c_star>1e-12</dream_c_star>
         <dream_n_crossover>3</dream_n_crossover>
-        <dream_p_gamma_unity>0.5</dream_p_gamma_unity>
+        <dream_p_gamma_unity>0.1</dream_p_gamma_unity>
         <dream_thin>1</dream_thin>
     </bayes_settings>
 </configuration>

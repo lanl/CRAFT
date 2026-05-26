@@ -7,7 +7,7 @@ from datetime import datetime
 Obs=pd.DataFrame({"Date":["MeanPFT","MeanPFT","MeanPFT","MeanPFT","MeanPFT","MeanPFT","MeanPFT","MeanPFT",
                           "MeanDIA","MeanDIA","MeanDIA","MeanDIA","MeanDIA","MeanDIA","MeanDIA","MeanDIA","MeanDIA","MeanDIA","MeanDIA","MeanDIA"],	
               "obs":[30,20,10,1,10,20,30,10,100,100,100,100,100,100,100,100,100,100,100,100],	
-              "error":[.020,.020,.020,.010,.020,.020,.020,.10,100,100,100,100,100,100,100,100,100,100,100,100],
+              "error":[30.0,20.0,20.0,20.0,20.0,20.0,20.0,20.0,100,100,100,100,100,100,100,100,100,100,100,100],
               "pft": [1,2,3,4,1,2,3,4,1,1,1,1,1,1,1,1,1,1,1,1],
               "case": [1,1,1,1,2,2,2,2,1,1,1,1,1,1,1,1,1,1,1,1],
               "Dia":[1,1,1,1,1,1,1,1,1,2,3,4,5,6,1,2,3,4,5,6 ],

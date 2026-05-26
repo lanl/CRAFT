@@ -150,7 +150,7 @@ def log_prob(regrli, scarlerli, x, scaler_pars, Varset2, samples, Model_List, Sc
        # print(Frame)
     # Calculate full log likelihoo
     #print(DFout)
-    ll1 = np.sum(norm.logpdf(DFout['sim'], loc=DFout['obs'], scale=DFout['error']*.1))
+    ll1 = np.sum(norm.logpdf(DFout['sim'], loc=DFout['obs'], scale=DFout['error']))
     
     # Check physical possibility/Values are within the bounds of initial sample
     p = sum([1 for t in range(len(x.columns)) 
