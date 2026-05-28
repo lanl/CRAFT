@@ -60,15 +60,13 @@ def plotout(regr, X_test, y_test, Title, model_type="rf"):
             with redirect_stdout(f):
                 shap_values = explainer.shap_values(X100,silent=True)
         feature_names=x.columns
-        print(feature_names)
         rf_resultX = pd.DataFrame(shap_values[:,:].mean(axis=0).T)
         #print(rf_resultX)
-        vals = np.abs(rf_resultX.values)
-        print(vals.flatten())
-        shap_importance = pd.DataFrame(list(zip(feature_names, vals.flatten())),
-                                  columns=['col_name','feature_importance_vals'])
-        print(shap_importance)
-        shap_importance.sort_values(by=['col_name'],
+        vals = np.abs(rf_resultX.values)/np.abs(rf_resultX.values).sum()
+        featuredf= pd.DataFrame(list(zip(feature_names, vals.flatten())),
+                                  columns=['Name','Imp'])
+        print(featuredf)
+        featuredf.sort_values(by=['Name'],
                                ascending=False, inplace=True)
         fig = plt.figure(figsize=(10, 5))
         ##plt.barh(x=shap_importance['col_name'],height=shap_importance['feature_importance_vals'],width=1,align='edge',color='#0072B2')
@@ -80,7 +78,7 @@ def plotout(regr, X_test, y_test, Title, model_type="rf"):
         pos = np.arange(sorted_idx.shape[0]) + 0.5
         fig = plt.figure(figsize=(5, 5))
         plt.barh(pos, vals.flatten()[sorted_idx], align="center")
-        plt.yticks(pos, np.array(x.columns)[sorted_idx])
+        plt.yticks(pos, np.array(feature_names)[sorted_idx])
 
         #test_loss, test_accuracy = regr.evaluate(X_test, y_test)
         #RF_testscore = regr.score(X_test, y_test)
@@ -97,7 +95,7 @@ def plotout(regr, X_test, y_test, Title, model_type="rf"):
         plt.savefig("diag/"+Title+ " Testing Set.png", dpi=600, bbox_inches='tight')
         
         # Since we don't have feature importance for NN, return an empty dataframe or None
-        featuredf = pd.DataFrame({"Name":x.columns, "Imp":np.zeros(len(x.columns))})
+        #featuredf = pd.DataFrame({"Name":x.columns, "Imp":np.zeros(len(x.columns))})
         return featuredf
 
 def build_nn_model(input_shape, layer_sizes=[64, 32, 1], activation='relu', optimizer='adam', loss='mse'):
@@ -287,11 +285,11 @@ if Full==True:
         featuredf = plotout(regr, X_test, y_test, var_name, model_type)
         print("Done")
         # Only include feature importance for RF models
-        if model_type == "rf":
-            row = pd.DataFrame({'Predicting': var_name,
+        
+        row = pd.DataFrame({'Predicting': var_name,
                         'Variable': featuredf.loc[featuredf["Imp"]>thres]["Name"].values,
                         "Importance": featuredf.loc[featuredf["Imp"]>thres]["Imp"].values})
-            ImportanceDF = pd.concat([ImportanceDF, row])
+        ImportanceDF = pd.concat([ImportanceDF, row])
     
     # Save importance data if it exists (only for RF)
     if len(ImportanceDF) > 0:
@@ -307,11 +305,11 @@ if Full==True:
 
 # For the second stage (reduced model), load the fit order from previous stage
 if os.path.exists("diag/FitOrder.csv"):
-    if model_type == "rf":  # Random Forest
+     # Random Forest
         NewVars = pd.read_csv("diag/FitOrder.csv")
         NewVars = NewVars.iloc[:,1].values
         print(NewVars)
-        ImportanceDF = pd.DataFrame({})
+        ImportanceDF = pd.DataFrame({}) 
         for i in list(range(0, len(Variables["xs"]))):
             y_i = Variables.loc[i,"y_i"]
             var_name = Variables.loc[i,"var_name"]
