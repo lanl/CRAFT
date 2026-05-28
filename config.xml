@@ -5,8 +5,8 @@
         <drive>Xiulin_runs/</drive><!--your files are located at $drive$case<-->
         <case>TwoSites-PreIndust-AllParams-ens-DBH10_bypft-002</case> 
         <n_runs>999</n_runs><!--Assumes these are 0-999<-->
-        <varlist>Date,fates_basal_area,fates_nplant</varlist> <!--Always start with Date <-->
-        <timestep>Month,PFTannMax,DIAannMax</timestep><!--Current options are Month, DayMin, DayMax, PFTannMean<-->
+        <varlist>Date,fates_basalarea,fates_nplant</varlist> <!--Always start with Date <-->
+        <timestep>Month,PFTannMax,DIAannMax</timestep><!--Current options are Month, DayMin, DayMax, PFTannMean,DIAannMax<-->
         <parameter_loc>fates-parameters-sampled.csv</parameter_loc><!--File with parameter combination <-->
     </cleaning_metadata>
 
@@ -16,7 +16,7 @@
         <activation>relu</activation><!--Add dropout layers <-->
         <optimizer>adam</optimizer>
         <loss>mse</loss>
-        <epochs>20</epochs>
+        <epochs>5</epochs>
         <batch_size>100</batch_size>
     </nn_config>
 
@@ -26,8 +26,8 @@
         <thres>0.001</thres>
         <emulator_drive>data/Vars/</emulator_drive>
         <fates_samples>fates-parameters-sampled.csv</fates_samples><!--Should be in CRAFT main <-->
-        <model_type>rf</model_type><!--rf/nn--> 
-        <nn_config>nn_config.csv</nn_config>
+        <model_type>nn</model_type><!--rf/nn--> 
+        <nn_config></nn_config><!--if file give file in main, otherwise use config above.  <-->
     </emulator_metadata>
 
     <!-- Emulator Settings-->
@@ -35,7 +35,7 @@
         <variable>
             <var_name>[fates_basal_area,fates_nplant]</var_name>
             <fates_runs>[fates_basal_areaPFTannMean.csv,fates_nplantPFTannMean.csv]</fates_runs>
-            <xs>[2,2]</xs> <!--where are the variables pythonic x_start<-->
+            <xs>[2,4]</xs> <!--where are the variables pythonic x_start<-->
             <xe>[26,26]</xe><!-- x_end<-->
             <y_i>[1,1]</y_i><!--where is y<-->
             <scaler>[1,1]</scaler><!-- scale_y<-->

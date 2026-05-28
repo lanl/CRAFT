@@ -6,7 +6,9 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.preprocessing import StandardScaler
 import joblib
 import os
+import shap
 import random
+from contextlib import redirect_stdout, redirect_stderr
 import tensorflow as tf
 from config_utils import get_emulator_metadata, get_emulator_settings, get_nn_config
 
@@ -46,11 +48,43 @@ def plotout(regr, X_test, y_test, Title, model_type="rf"):
             predicty = regr.predict(X_test_tensor)
         else:
             predicty = regr.predict(X_test)
-        
+        #####################################################################
         # Ensure predicty is flattened for plotting
         if hasattr(predicty, "flatten"):
             predicty = predicty.flatten()
-        
+        rng = np.random.default_rng()
+        print("Calculating shap values")
+        X100=rng.choice(X_test, size=10, axis=0, replace=False)
+        explainer = shap.Explainer(regr.predict, X100)
+        with open(os.devnull, 'w') as f:
+            with redirect_stdout(f):
+                shap_values = explainer.shap_values(X100,silent=True)
+        feature_names=x.columns
+        print(feature_names)
+        rf_resultX = pd.DataFrame(shap_values[:,:].mean(axis=0).T)
+        #print(rf_resultX)
+        vals = np.abs(rf_resultX.values)
+        print(vals.flatten())
+        shap_importance = pd.DataFrame(list(zip(feature_names, vals.flatten())),
+                                  columns=['col_name','feature_importance_vals'])
+        print(shap_importance)
+        shap_importance.sort_values(by=['col_name'],
+                               ascending=False, inplace=True)
+        fig = plt.figure(figsize=(10, 5))
+        ##plt.barh(x=shap_importance['col_name'],height=shap_importance['feature_importance_vals'],width=1,align='edge',color='#0072B2')
+        #p#lt.tick_params(axis='y', labelrotation=0)
+        #plt.tick_params(axis='x', labelrotation=90)
+        #plt.title(Title+ " Feature Importance")
+
+        sorted_idx = np.argsort(vals.flatten())
+        pos = np.arange(sorted_idx.shape[0]) + 0.5
+        fig = plt.figure(figsize=(5, 5))
+        plt.barh(pos, vals.flatten()[sorted_idx], align="center")
+        plt.yticks(pos, np.array(x.columns)[sorted_idx])
+
+        #test_loss, test_accuracy = regr.evaluate(X_test, y_test)
+        #RF_testscore = regr.score(X_test, y_test)
+        plt.savefig("diag/"+Title+ " Feature Importance.png", dpi=600, bbox_inches='tight')
         # For neural network, we don't have feature importance directly
         # Instead, we'll just plot the testing set results
         fig = plt.figure(figsize=(5, 10))
@@ -115,7 +149,7 @@ def learn(x, y, save, filename, model_type="rf", nn_config=None):
                 'activation': 'relu',
                 'optimizer': 'adam',
                 'loss': 'mse',
-                'epochs': 50,
+                'epochs': 5,
                 'batch_size': 32
             }
         

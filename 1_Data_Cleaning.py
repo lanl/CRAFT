@@ -26,11 +26,14 @@ timesteps=timesteps.split(",")
 #varlist=["Date",'FATES_GPP']
 samples=pd.read_csv(samples)
 
-
+##############################################################################
+############Month ############################################################
+##############################################################################
 subset_varlist = [
     item for item, category in zip(varlist, timesteps) if category == "Month"
 ]
 print("Processing Monthly Values")
+print("Monthly Variable")
 print(subset_varlist)
 print("Loading in files:")
 print(str(DRIVE1+CASENAME+str(1)+".csv"))
@@ -75,13 +78,15 @@ for var in subset_varlist[1:]:
         df2=pd.concat([df2,sub1])
     df2.to_csv('data/Vars/'+var+'MonthlyforML.csv')
 
-######Process Daily Vars 
+##############################################################################
+############Daily Mean  ############################################################
+##############################################################################
 print("Processing Daily Values")
 subset_varlist = [
     item for item, category in zip(varlist, timesteps) if category == "Day"
 ]
 subset_varlist.insert(0, "Date")
-
+print("Variables for Daily")
 print(subset_varlist)
 print("Loading in files:")
 print(str(DRIVE1+CASENAME+str(1)+"h1.csv"))
@@ -126,11 +131,17 @@ for var in subset_varlist[1:]:
         df2=pd.concat([df2,sub1])
     df2.to_csv('data/Vars/'+var+'DailyforML.csv')
 
+
+##############################################################################
+############################Daily Min#########################################
+##############################################################################
+
 subset_varlist = [
     item for item, category in zip(varlist, timesteps) if category == "DayMin"
 ]
 subset_varlist.insert(0, "Date")
 
+print("Variables for DayMin" )
 print(subset_varlist)
 print("Loading in files:")
 print(str(DRIVE1+CASENAME+str(1)+"h1.csv"))
@@ -182,7 +193,6 @@ for var in subset_varlist[1:]:
 
 print(subset_varlist)
 print("Loading in files:")
-print(str(DRIVE1+CASENAME+str(1)+"h1.csv"))
 
 df=pd.DataFrame()
 for i in list(range(0,Nruns)):
@@ -223,7 +233,10 @@ for var in subset_varlist[1:]:
         sub1["year"]=sub1["Date"].dt.year
         df2=pd.concat([df2,sub1])
     df2.to_csv('data/Vars/'+var+'DailymaxforML.csv')
-
+##################################################
+##############By PFT Annual Max ##################
+##################################################
+print("Variables for PFT Annual Max")
 
 subset_varlist = [
     item for item, category in zip(varlist, timesteps) if category == "PFTannMax"
@@ -231,44 +244,49 @@ subset_varlist = [
 print(subset_varlist)
 for var in subset_varlist[0:]:
     pdf3=pd.read_csv(DRIVE1+CASENAME+".csv")
-    Fullstack=pdf3.merge(samples, on=["case","ens_label"],how='left')
+    #print(pdf3)
+    pdf3=pdf3[["ens_label","case","pft" ,"time",var]]
+    Fullstack=pdf3.merge(samples, on=["ens_label","case"],how='left')
     Fullstack["Year"]=Fullstack["time"].str.split('T', expand=True)[0].str.split('-', expand=True)[0]
-    Fullstack=Fullstack.loc[Fullstack["Year"].astype(int)>1950]
-    Fullstack2=Fullstack.groupby(['case', 'ens_label','pft',"Year"],as_index=False).max()
-    X_data = Fullstack2[['fates_basalarea','case','Year','pft', 'fates_rxfire_AB',
-        'p1_fates_leaf_vcmax25top', 'p2_fates_leaf_vcmax25top',
-        'p3_fates_leaf_vcmax25top', 'p4_fates_leaf_vcmax25top',
-        'p3_fates_allom_agb1', 'p1_fates_mort_freezetol',
-        'p2_fates_mort_freezetol', 'p3_fates_mort_freezetol',
-        'p4_fates_mort_freezetol', 'p1_fates_mort_scalar_coldstress',
-        'p2_fates_mort_scalar_coldstress', 'p3_fates_mort_scalar_coldstress',
-        'p4_fates_mort_scalar_coldstress', 'p1_fates_allom_blca_expnt_diff',
-        'p2_fates_allom_blca_expnt_diff', 'p3_fates_allom_blca_expnt_diff',
-        'p4_fates_allom_blca_expnt_diff', 'p1_fates_turnover_fnrt',
-        'p2_fates_turnover_fnrt', 'p4_fates_turnover_fnrt']]
+    Fullstack=Fullstack.loc[Fullstack["Year"].astype(int)>1950] ### add date cutoff function. 
+    Fullstack2=Fullstack.groupby(['ens_label','case', 'pft',"Year"],as_index=False).max()
+    cols_to_move = [var,'ens_label',"time","case","pft" ,"Year"]
+    X_data = Fullstack2[cols_to_move + [col for col in Fullstack2.columns if col not in cols_to_move]]
+    
+    
+    #Fullstack2 #[['fates_basalarea','case','Year','pft', 'fates_rxfire_AB',
+        #'p1_fates_leaf_vcmax25top', 'p2_fates_leaf_vcmax25top',
+        #'p3_fates_leaf_vcmax25top', 'p4_fates_leaf_vcmax25top',
+        #'p3_fates_allom_agb1', 'p1_fates_mort_freezetol',
+        #'p2_fates_mort_freezetol', 'p3_fates_mort_freezetol',
+        #'p4_fates_mort_freezetol', 'p1_fates_mort_scalar_coldstress',
+        #'p2_fates_mort_scalar_coldstress', 'p3_fates_mort_scalar_coldstress',
+        #'p4_fates_mort_scalar_coldstress', 'p1_fates_allom_blca_expnt_diff',
+        #'p2_fates_allom_blca_expnt_diff', 'p3_fates_allom_blca_expnt_diff',
+        #'p4_fates_allom_blca_expnt_diff', 'p1_fates_turnover_fnrt',
+        #'p2_fates_turnover_fnrt', 'p4_fates_turnover_fnrt']]
 
     X_data.to_csv('data/Vars/'+var+'PFTannMean.csv')
+
+##################################################
+##############By DIA Annual Max ##################
+##################################################
+print("Variables for DIA Annual Max")
 
 subset_varlist = [
     item for item, category in zip(varlist, timesteps) if category == "DIAannMax"
 ]
+
 print(subset_varlist)
 for var in subset_varlist[0:]:
     pdf3=pd.read_csv(DRIVE1+"TwoSites-PreIndust-AllParams-ens_bydbh-001.csv")
-    Fullstack=pdf3.merge(samples, on=["case","ens_label"],how='left')
+    pdf3=pdf3[["ens_label","case","dbh","time",var]]
+    Fullstack=pdf3.merge(samples, on=["ens_label","case"],how='left')
     Fullstack["Year"]=Fullstack["time"].str.split('T', expand=True)[0].str.split('-', expand=True)[0]
     Fullstack=Fullstack.loc[Fullstack["Year"].astype(int)>1950]
-    Fullstack2=Fullstack.groupby(['case', 'ens_label','dbh',"Year"],as_index=False).max()
-    X_data = Fullstack2[['fates_nplant','case','Year','dbh', 'fates_rxfire_AB',
-        'p1_fates_leaf_vcmax25top', 'p2_fates_leaf_vcmax25top',
-        'p3_fates_leaf_vcmax25top', 'p4_fates_leaf_vcmax25top',
-        'p3_fates_allom_agb1', 'p1_fates_mort_freezetol',
-        'p2_fates_mort_freezetol', 'p3_fates_mort_freezetol',
-        'p4_fates_mort_freezetol', 'p1_fates_mort_scalar_coldstress',
-        'p2_fates_mort_scalar_coldstress', 'p3_fates_mort_scalar_coldstress',
-        'p4_fates_mort_scalar_coldstress', 'p1_fates_allom_blca_expnt_diff',
-        'p2_fates_allom_blca_expnt_diff', 'p3_fates_allom_blca_expnt_diff',
-        'p4_fates_allom_blca_expnt_diff', 'p1_fates_turnover_fnrt',
-        'p2_fates_turnover_fnrt', 'p4_fates_turnover_fnrt']]
+    Fullstack2=Fullstack.groupby(['ens_label','case', 'dbh',"Year"],as_index=False).max()
+    cols_to_move = [var,'ens_label',"time","case","dbh" ,"Year"]
+    X_data = Fullstack2[cols_to_move + [col for col in Fullstack2.columns if col not in cols_to_move]]
+    
 
     X_data.to_csv('data/Vars/'+var+'PFTannMean.csv')

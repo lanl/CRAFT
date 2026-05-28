@@ -72,22 +72,7 @@ elif (model_type == "Xiulin_nn"): ####needs to be a file
 else: 
     print("Model Type not support")
 
-if  (model_type == "Xiulin_nn"):
-    indices_to_delete = np.where(Varset == "case")[0]
-    Varset2 = np.delete(Varset, indices_to_delete)
-    indices_to_delete = np.where(Varset2 == "Year")[0]
-    Varset2 = np.delete(Varset2, indices_to_delete)
-    indices_to_delete = np.where(Varset2 == "pft")[0]
-    Varset2 = np.delete(Varset2, indices_to_delete)
-    indices_to_delete = np.where(Varset2 == "dia")[0]
-    Varset2 = np.delete(Varset2, indices_to_delete)
-    samples_sub = samples[Varset2]
-    scaler_pars = StandardScaler().fit(samples_sub.values)
-    samples_scale = scaler_pars.transform(samples_sub)
-    Names = pd.concat([pd.Series(["case","Year", "pft"]),pd.Series(samples_sub.columns)])
-    Names2= pd.concat([pd.Series(["case","dia", "pft"]),pd.Series(samples_sub.columns)])
-       #### Needs to be seperate for dia 
-elif(model_type == "Xiulin_rf"):
+if  (model_type == "Xiulin_nn")|(model_type == "Xiulin_rf"):
     Varset = Varset.iloc[:, 1].values
     indices_to_delete = np.where(Varset == "case")[0]
     Varset2 = np.delete(Varset, indices_to_delete)
@@ -97,18 +82,18 @@ elif(model_type == "Xiulin_rf"):
     Varset2 = np.delete(Varset2, indices_to_delete)
     indices_to_delete = np.where(Varset2 == "dbh")[0]
     Varset2 = np.delete(Varset2, indices_to_delete)
-    print(Varset2)
     samples_sub = samples[Varset2]
     scaler_pars = StandardScaler().fit(samples_sub.values)
     samples_scale = scaler_pars.transform(samples_sub)
     Names = pd.concat([pd.Series(["case","Year", "pft","dia"]),pd.Series(samples_sub.columns)])
-    Names2=np.nan 
+    Names2= np.nan
        #### Needs to be seperate for dia 
+
 else:
     # Extract variable names
     Varset = Varset.iloc[:, 1].values
 
-    # Remove time variables
+    # Remove time variable
     indices_to_delete = np.where(Varset == "month")[0]
     Varset2 = np.delete(Varset, indices_to_delete)
     indices_to_delete = np.where(Varset2 == "year")[0]
