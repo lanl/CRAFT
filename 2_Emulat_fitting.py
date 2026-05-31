@@ -54,7 +54,7 @@ def plotout(regr, X_test, y_test, Title, model_type="rf"):
             predicty = predicty.flatten()
         rng = np.random.default_rng()
         print("Calculating shap values")
-        X100=rng.choice(X_test, size=10, axis=0, replace=False)
+        X100=rng.choice(X_test, size=100, axis=0, replace=False)
         explainer = shap.Explainer(regr.predict, X100)
         with open(os.devnull, 'w') as f:
             with redirect_stdout(f):
@@ -302,7 +302,8 @@ if Full==True:
         # Use all columns for reduced model
         NewVars = pd.DataFrame(x.columns)
         NewVars.to_csv("diag/FitOrder.csv")
-
+if thres==0:
+    exit()
 # For the second stage (reduced model), load the fit order from previous stage
 if os.path.exists("diag/FitOrder.csv"):
      # Random Forest
@@ -328,12 +329,12 @@ if os.path.exists("diag/FitOrder.csv"):
             X_train, X_test, y_train, y_test, regr = learn(x, y, True, SaveName+var_name, model_type, nn_config)
 
             # Only include feature importance for RF models
-            if model_type == "rf":
-                featuredf = plotout(regr, X_test, y_test, var_name, model_type)
-                row = pd.DataFrame({'Predicting': var_name,
+            
+            featuredf = plotout(regr, X_test, y_test, var_name, model_type)
+            row = pd.DataFrame({'Predicting': var_name,
                         'Variable': featuredf["Name"].values,
                         "Importance": featuredf["Imp"].values})
-                ImportanceDF = pd.concat([ImportanceDF, row])
+            ImportanceDF = pd.concat([ImportanceDF, row])
         
         # Save importance data if it exists (only for RF)
         if len(ImportanceDF) > 0:
