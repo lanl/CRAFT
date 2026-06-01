@@ -54,13 +54,13 @@ def plotout(regr, X_test, y_test, Title, model_type="rf"):
             predicty = predicty.flatten()
         rng = np.random.default_rng()
         print("Calculating shap values")
-        X100=rng.choice(X_test, size=100, axis=0, replace=False)
+        X100=rng.choice(X_test, size=10, axis=0, replace=False)
         explainer = shap.Explainer(regr.predict, X100)
         with open(os.devnull, 'w') as f:
             with redirect_stdout(f):
-                shap_values = explainer.shap_values(X100,silent=True)
+                shap_values = explainer(X100,silent=True)
         feature_names=x.columns
-        rf_resultX = pd.DataFrame(shap_values[:,:].mean(axis=0).T)
+        rf_resultX = pd.DataFrame(shap_values.values.mean(axis=0))
         #print(rf_resultX)
         vals = np.abs(rf_resultX.values)/np.abs(rf_resultX.values).sum()
         featuredf= pd.DataFrame(list(zip(feature_names, vals.flatten())),

@@ -57,20 +57,23 @@ print(f"  Output file: {output_file}")
 samples = pd.read_csv(samples_file)
 
 Emdir = "data/Models/"
-if (model_type == "rf")|(model_type == "Xiulin_rf"):
-    Varset = pd.read_csv("diag/FitOrder.csv")
-elif model_type=="nn":
-    s_Varset = pd.Series(samples.columns.tolist())
-    s_Varset = pd.concat([s_Varset, pd.Series(["month", "year"])])
-    print(s_Varset)
-    ncols = 2 + len(samples.columns.tolist())
-    Varset = pd.DataFrame({"r": list(range(0, len(s_Varset))), "0": s_Varset})
-    print(Varset)
-elif (model_type == "Xiulin_nn"): ####needs to be a file
-    Varset = pd.read_csv("diag/FitOrder.csv")
-    print("yes")
-else: 
-    print("Model Type not support")
+Varset = pd.read_csv("diag/FitOrder.csv")
+#
+# 
+# if (model_type == "rf")|(model_type == "Xiulin_rf"):
+#    Varset = pd.read_csv("diag/FitOrder.csv")
+#elif model_type=="nn":
+#    s_Varset = pd.Series(samples.columns.tolist())
+#    s_Varset = pd.concat([s_Varset, pd.Series(["month", "year"])])
+#    print(s_Varset)
+#    ncols = 2 + len(samples.columns.tolist())
+#    Varset = pd.DataFrame({"r": list(range(0, len(s_Varset))), "0": s_Varset})
+#    print(Varset)
+#elif (model_type == "Xiulin_nn"): ####needs to be a file
+#    Varset = pd.read_csv("diag/FitOrder.csv")
+#    print("yes")
+#else: 
+#    print("Model Type not support")
 
 if  (model_type == "Xiulin_nn")|(model_type == "Xiulin_rf"):
     Varset = Varset.iloc[:, 1].values

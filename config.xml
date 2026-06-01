@@ -23,7 +23,7 @@
     <!-- Emulator Metadata-->
     <emulator_metadata>
         <save_name>CRAFT_Xulin</save_name>
-        <thres>0.001</thres>
+        <thres>0.05</thres>
         <emulator_drive>data/Vars/</emulator_drive>
         <fates_samples>fates-parameters-sampled.csv</fates_samples><!--Should be in CRAFT main <-->
         <model_type>nn</model_type><!--rf/nn--> 
@@ -46,7 +46,7 @@
     <!-- Bayes Settings -->
     <bayes_settings>
         <initialpos>45</initialpos>
-        <model_type>Xiulin_rf</model_type>
+        <model_type>Xiulin_nn</model_type>
         <steps>2000</steps>
         <adapt_interval>1000</adapt_interval>
         <burnin>200</burnin>
