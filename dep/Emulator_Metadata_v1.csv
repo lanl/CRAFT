@@ -1,8 +1,0 @@
-﻿Var,Path,Explanation
-Settings_File,Emulator_Fitting_Settings1.csv,
-SaveName,CRAFT_practice_Full,
-thres,0.01,
-EmulatorDrive,data/Vars/,
-FATES_samples,LHS.sam.csv,
-model_type,rf,"Model type: 'rf' for Random Forest or 'nn' for Neural Network"
-nn_config,nn_config.csv,"Path to neural network configuration file (used only when model_type='nn')"

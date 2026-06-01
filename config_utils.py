@@ -32,7 +32,8 @@ def get_cleaning_metadata():
         'CASE': [metadata.find('case').text],
         'N_runs': [int(metadata.find('n_runs').text)],
         'Varlist': [metadata.find('varlist').text],
-        'Parameter_loc': [metadata.find('parameter_loc').text]
+        'Parameter_loc': [metadata.find('parameter_loc').text],
+        'timestep': [metadata.find('timestep').text]
     }
     
     return pd.DataFrame(data)
@@ -48,19 +49,17 @@ def get_emulator_metadata():
     metadata = root.find('emulator_metadata')
     
     data = {
-        'Var': ['Settings_File', 'SaveName', 'thres', 'EmulatorDrive', 
+        'Var': [ 'SaveName', 'thres', 'EmulatorDrive', 
                 'FATES_samples', 'model_type', 'nn_config'],
         'Path': [
-            metadata.find('settings_file').text,
             metadata.find('save_name').text,
             metadata.find('thres').text,
             metadata.find('emulator_drive').text,
             metadata.find('fates_samples').text,
             metadata.find('model_type').text,
-            metadata.find('nn_config').text
+            metadata.find('nn_config').text,
         ],
         'Explanation': [
-            '',
             '',
             '',
             '',
@@ -91,7 +90,7 @@ def get_emulator_settings():
         xe_text = var.find('xe').text
         y_i_text = var.find('y_i').text
         scaler_text = var.find('scaler').text
-        
+        downsample= var.find('downsample').text
         # If the values are in list format, parse them manually
         if var_name_text.startswith('[') and var_name_text.endswith(']'):
             try:
@@ -102,7 +101,7 @@ def get_emulator_settings():
                 xe_values = [int(x.strip()) for x in xe_text[1:-1].split(',')]
                 y_i_values = [int(y.strip()) for y in y_i_text[1:-1].split(',')]
                 scaler_values = [float(s.strip()) for s in scaler_text[1:-1].split(',')]
-                
+                downsample = [float(s.strip()) for s in downsample[1:-1].split(',')]
                 # Create a DataFrame row for each variable in the lists
                 for j in range(len(var_names)):
                     data.append({
@@ -112,7 +111,8 @@ def get_emulator_settings():
                         'xs': xs_values[j],
                         'xe': xe_values[j],
                         'y_i': y_i_values[j],
-                        'Scaler': scaler_values[j]
+                        'Scaler': scaler_values[j],
+                        "downsample":downsample[j]
                     })
             except (ValueError, IndexError) as e:
                 print(f"Error parsing list values: {e}")
@@ -124,7 +124,8 @@ def get_emulator_settings():
                     'xs': int(xs_text),
                     'xe': int(xe_text),
                     'y_i': int(y_i_text),
-                    'Scaler': float(scaler_text)
+                    'Scaler': float(scaler_text),
+                    'downsample':float(downsample)
                 })
         else:
             # Handle single value format
@@ -135,7 +136,8 @@ def get_emulator_settings():
                 'xs': int(xs_text),
                 'xe': int(xe_text),
                 'y_i': int(y_i_text),
-                'Scaler': float(scaler_text)
+                'Scaler': float(scaler_text),
+                'downsample':float(downsample)
             })
     
     return pd.DataFrame(data)
@@ -152,12 +154,15 @@ def get_bayes_settings():
     
     data = {
         'parameter': [
-            'initialpos', 'steps', 'adapt_interval', 'burnin',
+            'initialpos','model_type', 'steps', 'adapt_interval', 'burnin',
             'Model_List', 'Scaler_List', 'Obs_List', 'list1',
-            'samples_file', 'obsfile'
+            'samples_file', 'obsfile', 'output_file', 'sampler_method',
+            'dream_n_chains', 'dream_delta', 'dream_c', 'dream_c_star',
+            'dream_n_crossover', 'dream_p_gamma_unity', 'dream_thin'
         ],
         'value': [
             settings.find('initialpos').text,
+            settings.find('model_type').text,
             settings.find('steps').text,
             settings.find('adapt_interval').text,
             settings.find('burnin').text,
@@ -166,7 +171,16 @@ def get_bayes_settings():
             settings.find('obs_list').text,
             settings.find('list1').text,
             settings.find('samples_file').text,
-            settings.find('obsfile').text
+            settings.find('obsfile').text,
+            settings.find('output_file').text,
+            settings.find('sampler_method').text,
+            settings.find('dream_n_chains').text,
+            settings.find('dream_delta').text,
+            settings.find('dream_c').text,
+            settings.find('dream_c_star').text,
+            settings.find('dream_n_crossover').text,
+            settings.find('dream_p_gamma_unity').text,
+            settings.find('dream_thin').text
         ]
     }
     

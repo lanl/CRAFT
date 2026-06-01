@@ -6,6 +6,9 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.preprocessing import StandardScaler
 import joblib
 import os
+import shap
+import random
+from contextlib import redirect_stdout, redirect_stderr
 import tensorflow as tf
 from config_utils import get_emulator_metadata, get_emulator_settings, get_nn_config
 
@@ -45,14 +48,44 @@ def plotout(regr, X_test, y_test, Title, model_type="rf"):
             predicty = regr.predict(X_test_tensor)
         else:
             predicty = regr.predict(X_test)
-        
+        #####################################################################
         # Ensure predicty is flattened for plotting
         if hasattr(predicty, "flatten"):
             predicty = predicty.flatten()
-        
+        rng = np.random.default_rng()
+        print("Calculating shap values")
+        X100=rng.choice(X_test, size=10, axis=0, replace=False)
+        explainer = shap.Explainer(regr.predict, X100)
+        with open(os.devnull, 'w') as f:
+            with redirect_stdout(f):
+                shap_values = explainer(X100,silent=True)
+        feature_names=x.columns
+        rf_resultX = pd.DataFrame(shap_values.values.mean(axis=0))
+        #print(rf_resultX)
+        vals = np.abs(rf_resultX.values)/np.abs(rf_resultX.values).sum()
+        featuredf= pd.DataFrame(list(zip(feature_names, vals.flatten())),
+                                  columns=['Name','Imp'])
+        print(featuredf)
+        featuredf.sort_values(by=['Name'],
+                               ascending=False, inplace=True)
+        fig = plt.figure(figsize=(10, 5))
+        ##plt.barh(x=shap_importance['col_name'],height=shap_importance['feature_importance_vals'],width=1,align='edge',color='#0072B2')
+        #p#lt.tick_params(axis='y', labelrotation=0)
+        #plt.tick_params(axis='x', labelrotation=90)
+        #plt.title(Title+ " Feature Importance")
+
+        sorted_idx = np.argsort(vals.flatten())
+        pos = np.arange(sorted_idx.shape[0]) + 0.5
+        fig = plt.figure(figsize=(5, 5))
+        plt.barh(pos, vals.flatten()[sorted_idx], align="center")
+        plt.yticks(pos, np.array(feature_names)[sorted_idx])
+
+        #test_loss, test_accuracy = regr.evaluate(X_test, y_test)
+        #RF_testscore = regr.score(X_test, y_test)
+        plt.savefig("diag/"+Title+ " Feature Importance.png", dpi=600, bbox_inches='tight')
         # For neural network, we don't have feature importance directly
         # Instead, we'll just plot the testing set results
-        fig = plt.figure(figsize=(5, 5))
+        fig = plt.figure(figsize=(5, 10))
         plt.plot(predicty, y_test, 'ro', alpha=0.2, color="blue")
         plt.xlabel("predicted", fontsize=15)
         plt.ylabel("observed", fontsize=15)
@@ -62,11 +95,13 @@ def plotout(regr, X_test, y_test, Title, model_type="rf"):
         plt.savefig("diag/"+Title+ " Testing Set.png", dpi=600, bbox_inches='tight')
         
         # Since we don't have feature importance for NN, return an empty dataframe or None
-        featuredf = pd.DataFrame({"Name":x.columns, "Imp":np.zeros(len(x.columns))})
+        #featuredf = pd.DataFrame({"Name":x.columns, "Imp":np.zeros(len(x.columns))})
         return featuredf
 
 def build_nn_model(input_shape, layer_sizes=[64, 32, 1], activation='relu', optimizer='adam', loss='mse'):
     """Build a neural network model with the specified architecture"""
+    def clip_above_zero(x):
+        return tf.minimum(x, 0.0)
     metrics_list = ['MeanSquaredError', tf.keras.metrics.R2Score()]
     
     # Build the model
@@ -92,6 +127,7 @@ def build_nn_model(input_shape, layer_sizes=[64, 32, 1], activation='relu', opti
     return model
     
 def learn(x, y, save, filename, model_type="rf", nn_config=None):
+    
     scaler = StandardScaler().fit(x)
     x_z = scaler.transform(x)
     X_train, X_test, y_train, y_test = train_test_split(
@@ -111,7 +147,7 @@ def learn(x, y, save, filename, model_type="rf", nn_config=None):
                 'activation': 'relu',
                 'optimizer': 'adam',
                 'loss': 'mse',
-                'epochs': 50,
+                'epochs': 5,
                 'batch_size': 32
             }
         
@@ -174,9 +210,8 @@ Meta = get_emulator_metadata()
 
 SaveName = Meta.loc[Meta["Var"]=='SaveName']['Path'].values[0]
 print(SaveName)
-thres = float(Meta.loc[Meta["Var"]=='thres']['Path'])
+thres = float(Meta.loc[Meta["Var"]=='thres']['Path'].values[0])
 EmulatorDirve = Meta.loc[Meta["Var"]=='EmulatorDrive']['Path'].values[0]
-Downsample = 1.0
 Fates_sa = Meta.loc[Meta["Var"]=='FATES_samples']['Path']
 Fates_sa = Fates_sa.values[0]
 
@@ -230,24 +265,31 @@ if Full==True:
         xe = Variables.loc[i,"xe"]
         y_i = Variables.loc[i,"y_i"]
         var_name = Variables.loc[i,"var_name"]
+        Downsample=Variables.loc[i,"downsample"]
         Scaler = Variables.loc[i,"Scaler"]
         GPP = pd.read_csv(EmulatorDirve+Variables.loc[i, 'FATESruns'])
-        if var_name in ["LWP_max"]:
-            GPP["DOY"] = pd.DatetimeIndex(GPP['Date']).dayofyear
-            GPP["Year"] = pd.DatetimeIndex(GPP['Date']).year
-       
+     #   if var_name in ["LWP_max"]:
+     #       GPP["DOY"] = pd.DatetimeIndex(GPP['Date']).dayofyear
+     #       GPP["Year"] = pd.DatetimeIndex(GPP['Date']).year
+        #print(len(GPP.columns))
+        print("Creating full emulator for")
+
+        GPP.sample(n=int(len(GPP)*Downsample))
+
         x = GPP.iloc[:,np.r_[xs:xe]] ###here skipping all but the first tminus
         y = GPP.iloc[:,y_i]*Scaler
         print(var_name)
+        print("Xstart XEnd Yvariable")
+        print(xs,xe,y_i)
         X_train, X_test, y_train, y_test, regr = learn(x, y, True, SaveName+var_name, model_type, nn_config)
         featuredf = plotout(regr, X_test, y_test, var_name, model_type)
-        
+        print("Done")
         # Only include feature importance for RF models
-        if model_type == "rf":
-            row = pd.DataFrame({'Predicting': var_name,
+        
+        row = pd.DataFrame({'Predicting': var_name,
                         'Variable': featuredf.loc[featuredf["Imp"]>thres]["Name"].values,
                         "Importance": featuredf.loc[featuredf["Imp"]>thres]["Imp"].values})
-            ImportanceDF = pd.concat([ImportanceDF, row])
+        ImportanceDF = pd.concat([ImportanceDF, row])
     
     # Save importance data if it exists (only for RF)
     if len(ImportanceDF) > 0:
@@ -260,40 +302,40 @@ if Full==True:
         # Use all columns for reduced model
         NewVars = pd.DataFrame(x.columns)
         NewVars.to_csv("diag/FitOrder.csv")
-
+if thres==0:
+    exit()
 # For the second stage (reduced model), load the fit order from previous stage
 if os.path.exists("diag/FitOrder.csv"):
-    NewVars = pd.read_csv("diag/FitOrder.csv")
-    NewVars = NewVars.iloc[:,1].values
-    print(NewVars)
-    ImportanceDF = pd.DataFrame({})
-    for i in list(range(0, len(Variables["xs"]))):
-        y_i = Variables.loc[i,"y_i"]
-        var_name = Variables.loc[i,"var_name"]
-        Scaler = Variables.loc[i,"Scaler"]
-        GPP = pd.read_csv(EmulatorDirve+Variables.loc[i, 'FATESruns'])
-        print(GPP.columns)
-        
-        # Make sure all NewVars exist in the dataframe
-        valid_cols = [col for col in NewVars if col in GPP.columns]
-        x = GPP[valid_cols]
-        
-        x = x[valid_cols]
-        y = GPP.iloc[:,y_i]*Scaler
-        print(x)
-        print(var_name)
-        X_train, X_test, y_train, y_test, regr = learn(x, y, True, SaveName+var_name, model_type, nn_config)
-        
-       
-        
-        # Only include feature importance for RF models
-        if model_type == "rf":
+     # Random Forest
+        NewVars = pd.read_csv("diag/FitOrder.csv")
+        NewVars = NewVars.iloc[:,1].values
+        print(NewVars)
+        ImportanceDF = pd.DataFrame({}) 
+        for i in list(range(0, len(Variables["xs"]))):
+            y_i = Variables.loc[i,"y_i"]
+            var_name = Variables.loc[i,"var_name"]
+            Scaler = Variables.loc[i,"Scaler"]
+            GPP = pd.read_csv(EmulatorDirve+Variables.loc[i, 'FATESruns'])
+            #print(GPP.columns)
+            print("Creating an emulator with reduced parameters for")
+            # Make sure all NewVars exist in the dataframe
+            valid_cols = [col for col in NewVars if col in GPP.columns]
+            x = GPP[valid_cols]
+            
+            x = x[valid_cols]
+            y = GPP.iloc[:,y_i]*Scaler
+            #print(x)
+            print(var_name)
+            X_train, X_test, y_train, y_test, regr = learn(x, y, True, SaveName+var_name, model_type, nn_config)
+
+            # Only include feature importance for RF models
+            
             featuredf = plotout(regr, X_test, y_test, var_name, model_type)
             row = pd.DataFrame({'Predicting': var_name,
-                       'Variable': featuredf["Name"].values,
-                       "Importance": featuredf["Imp"].values})
+                        'Variable': featuredf["Name"].values,
+                        "Importance": featuredf["Imp"].values})
             ImportanceDF = pd.concat([ImportanceDF, row])
-    
-    # Save importance data if it exists (only for RF)
-    if len(ImportanceDF) > 0:
-        ImportanceDF.to_csv("diag/Reduced_Importance.csv")
+        
+        # Save importance data if it exists (only for RF)
+        if len(ImportanceDF) > 0:
+            ImportanceDF.to_csv("diag/Reduced_Importance.csv")
