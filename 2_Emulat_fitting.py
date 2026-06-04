@@ -54,7 +54,7 @@ def plotout(regr, X_test, y_test, Title, model_type="rf"):
             predicty = predicty.flatten()
         rng = np.random.default_rng()
         print("Calculating shap values")
-        X100=rng.choice(X_test, size=10, axis=0, replace=False)
+        X100=rng.choice(X_test, size=100, axis=0, replace=False)
         explainer = shap.Explainer(regr.predict, X100)
         with open(os.devnull, 'w') as f:
             with redirect_stdout(f):

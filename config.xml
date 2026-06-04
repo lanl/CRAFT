@@ -16,14 +16,14 @@
         <activation>relu</activation><!--Add dropout layers <-->
         <optimizer>adam</optimizer>
         <loss>mse</loss>
-        <epochs>5</epochs>
+        <epochs>50</epochs>
         <batch_size>100</batch_size>
     </nn_config>
 
     <!-- Emulator Metadata-->
     <emulator_metadata>
         <save_name>CRAFT_Xulin</save_name>
-        <thres>0.05</thres>
+        <thres>0.01</thres>
         <emulator_drive>data/Vars/</emulator_drive>
         <fates_samples>fates-parameters-sampled.csv</fates_samples><!--Should be in CRAFT main <-->
         <model_type>nn</model_type><!--rf/nn--> 
