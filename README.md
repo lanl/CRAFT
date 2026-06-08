@@ -81,85 +81,66 @@ pip install -r requirements.txt
 
 ## Configuration
 
-The project uses five main configuration files:
+The project uses a single configuration file 
+config.xml
 
-- `Cleaning_Metadata_v1.csv`: Contains settings for the data cleaning process.
-- `Emulator_Settings_v1.csv`: Contains settings for the emulator fitting process.
-- `Emulator_Metadata_v1.csv`: Provides metadata for the emulator process.
-- `Bayes_Settings_v1.csv`: Contains settings for the Bayesian inference process.
-- `nn_config.csv`: Contains configuration for neural network models (if selected).
 
-Modify these files to adjust the variables being modeled, their input files, model type, and other configuration parameters.
+Modify this file to adjust the variables being modeled, their input files, model type, and other configuration parameters.
 
-## Configuration Files
 
-### 1. Cleaning_Metadata_v1.csv
-
-Purpose: Contains settings for the data cleaning process.
-Related Script: 1_Data_Cleaning.py
-
+### For 1_Data_Cleaning.py
 Key Fields:
-- DRIVE: Directory containing input data
-- CASE: Name of the case being processed
-- N_runs: Number of runs to process
-- Varlist: List of variables to be cleaned
-- Parameter_loc: Location of parameter file
+- drive: Directory containing input data
+- case: Name of the case being processed
+- n_runs: Number of runs to process
+- varlist: List of variables to be cleaned
+- timestep: The way the variable should be evaluated, currently Monthly mean DayMin,DayMax, PFTannMax(annual max by PFT),
+   DIAannMax (By diameter annual Max)
 
-### 2. Emulator_Settings_v1.csv
-
-Purpose: Contains settings for the emulator fitting process.
-Related Script: 2_Emulat_fitting.py
-
-Key Fields:
-- var_name: Name of the variable being modeled (e.g., GPP)
-- FATESruns: Input file for the variable data
-- xs, xe: Start and end indices for data selection
-- y_i: Index of the target variable
-- Scaler: Scaling factor for the variable
-
-### 3. Emulator_Metadata_v1.csv
-
-Purpose: Provides metadata for the emulator process.
-Related Scripts: 2_Emulat_fitting.py, 3_Bayes_Fit.py
-
-Key Fields:
-- Settings_File: Name of the emulator settings file
+### For 2_Emulat_fitting.py
+<!-- Emulator Metadata-->
+Emulator Metadata: 
 - SaveName: Name for saving output files
 - thres: Threshold value for feature importance
 - EmulatorDrive: Directory for emulator data
 - FATES_samples: Input file for FATES samples
 - model_type: Type of model to use ('rf' for Random Forest or 'nn' for Neural Network)
 - nn_config: Path to the neural network configuration file (used only when model_type='nn')
+   or put nothing here to use Nueral network configuration in config
+Emulator Settings: 
+- var_name: Name of the variable being modeled (e.g., GPP)
+- FATESruns: Input file for the variable data
+- xs, xe: Start and end indices for data selection
+- y_i: Index of the target variable
+- Scaler: Scaling factor for the variable
+Nueral Network Configuration:
+- layer_sizes: from top to bottom the number of nuerons in each layer
+- activation: activation function for all but the last layer
+- optimizer: tensorflow-keras optimizer to use
+- loss: tensorflow-keras loss function to use
+- epochs: Number of epochs to run the model
+- batch_size: Batch size to evaluate on. 
 
-### 4. Bayes_Settings_v1.csv
-
-Purpose: Contains settings for the Bayesian inference process.
-Related Script: 3_Bayes_Fit.py
-
-Key Fields:
+### For 3_Bayes_Fit.py
 - initialpos: Initial position for the MCMC algorithm
+- model_typ: nn or rf (or custom)
 - steps: Number of MCMC steps
 - adapt_interval: Adaptation interval for the MCMC algorithm
 - burnin: Number of burn-in steps
-- Model_List: List of models to use
-- Scaler_List: List of scalers to use
+- Model_List: List of emulator models to use
+- Scaler_List: List of emulator scalers to use
 - Obs_List: List of observations to use
 - list1: Additional list of parameters (purpose to be clarified)
 - samples_file: File containing samples for the MCMC process
 - obsfile: File containing observation data
-
-### 5. nn_config.csv
-
-Purpose: Contains configuration for neural network models.
-Related Script: 2_Emulat_fitting.py (when model_type='nn')
-
-Key Fields:
-- layer_sizes: Comma-separated list of layer sizes (e.g., "64,32,1")
-- activation: Activation function for hidden layers (e.g., 'relu')
-- optimizer: Optimizer for training (e.g., 'adam')
-- loss: Loss function (e.g., 'mse')
-- epochs: Number of training epochs
-- batch_size: Batch size for training
+- sampler_method: adaptive or dream
+- dream_n_chains: Only used in dream, Number of parallel chains (minimum 3, recommended: 3-10)
+- dream_delta:Only used in dream, number of chain pairs used for proposal generation (default 3)
+- dream_c:Only used in dream,Scaling factor for epsilon randomization (default 0.1)
+- dream_c_star: Only used in dream, small constant to maintain ergodicity (default 1e-12)
+- dream_n_crossover: Only used in dream, number of crossover probabilities to choose from (default 3)
+- dream_p_gamma_unity:Only used in dream, probability of setting gamma to 1 (default 0.2)
+- dream_thin: :Only used in dream, thinning interval for storing samples (default 1)
 
 ## Model Types
 
