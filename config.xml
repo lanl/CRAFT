@@ -13,10 +13,17 @@
     <!-- Neural Network Configuration-->
     <nn_config>
         <layer_sizes>44,1280,640,256,128,64,32,1</layer_sizes> <!--From top to bottom <-->
-        <activation>relu</activation><!--Add dropout layers <-->
+        <activations>relu,relu,relu,relu,relu,relu,relu</activations>
+        <dropouts>0.2,0.2,0.1,0.1,0.1,0.1,0.1</dropouts>
+        <l1_regularization>0.1,0.1,0.1,0.1,0.0,0.0,0.0</l1_regularization>
+        <l2_regularization>0.2,0.2,0.2,0.2,0.0,0.0,0.0</l2_regularization>
+        <early_stopping_enabled>true</early_stopping_enabled>
+        <early_stopping_monitor>val_loss</early_stopping_monitor>
+        <early_stopping_patience>5</early_stopping_patience>
+        <early_stopping_min_delta>0.001</early_stopping_min_delta>
         <optimizer>adam</optimizer>
         <loss>mse</loss>
-        <epochs>50</epochs>
+        <epochs>100</epochs>
         <batch_size>100</batch_size>
     </nn_config>
 

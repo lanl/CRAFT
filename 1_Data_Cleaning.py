@@ -78,9 +78,11 @@ for var in subset_varlist[1:]:
         df2=pd.concat([df2,sub1])
     df2.to_csv('data/Vars/'+var+'MonthlyforML.csv')
 
-##############################################################################
+####################################################################################
 ############Daily Mean  ############################################################
-##############################################################################
+####################################################################################
+
+
 print("Processing Daily Values")
 subset_varlist = [
     item for item, category in zip(varlist, timesteps) if category == "Day"
@@ -233,6 +235,8 @@ for var in subset_varlist[1:]:
         sub1["year"]=sub1["Date"].dt.year
         df2=pd.concat([df2,sub1])
     df2.to_csv('data/Vars/'+var+'DailymaxforML.csv')
+
+
 ##################################################
 ##############By PFT Annual Max ##################
 ##################################################
@@ -251,20 +255,7 @@ for var in subset_varlist[0:]:
     Fullstack=Fullstack.loc[Fullstack["Year"].astype(int)>1950] ### add date cutoff function. 
     Fullstack2=Fullstack.groupby(['ens_label','case', 'pft',"Year"],as_index=False).max()
     cols_to_move = [var,'ens_label',"time","case","pft" ,"Year"]
-    X_data = Fullstack2[cols_to_move + [col for col in Fullstack2.columns if col not in cols_to_move]]
-    
-    
-    #Fullstack2 #[['fates_basalarea','case','Year','pft', 'fates_rxfire_AB',
-        #'p1_fates_leaf_vcmax25top', 'p2_fates_leaf_vcmax25top',
-        #'p3_fates_leaf_vcmax25top', 'p4_fates_leaf_vcmax25top',
-        #'p3_fates_allom_agb1', 'p1_fates_mort_freezetol',
-        #'p2_fates_mort_freezetol', 'p3_fates_mort_freezetol',
-        #'p4_fates_mort_freezetol', 'p1_fates_mort_scalar_coldstress',
-        #'p2_fates_mort_scalar_coldstress', 'p3_fates_mort_scalar_coldstress',
-        #'p4_fates_mort_scalar_coldstress', 'p1_fates_allom_blca_expnt_diff',
-        #'p2_fates_allom_blca_expnt_diff', 'p3_fates_allom_blca_expnt_diff',
-        #'p4_fates_allom_blca_expnt_diff', 'p1_fates_turnover_fnrt',
-        #'p2_fates_turnover_fnrt', 'p4_fates_turnover_fnrt']]
+    X_data = Fullstack2[cols_to_move + [col for col in Fullstack2.columns if col not in cols_to_move]]  
 
     X_data.to_csv('data/Vars/'+var+'PFTannMean.csv')
 

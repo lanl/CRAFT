@@ -198,7 +198,14 @@ def get_nn_config():
     
     data = {
         'layer_sizes': [nn_config.find('layer_sizes').text],
-        'activation': [nn_config.find('activation').text],
+        'activations': [nn_config.find('activations').text],
+        'dropouts': [nn_config.find('dropouts').text],
+        'l1_regularization': [nn_config.find('l1_regularization').text],
+        'l2_regularization': [nn_config.find('l2_regularization').text],
+        'early_stopping_enabled': [nn_config.find('early_stopping_enabled').text.lower() == 'true'],
+        'early_stopping_monitor': [nn_config.find('early_stopping_monitor').text],
+        'early_stopping_patience': [int(nn_config.find('early_stopping_patience').text)],
+        'early_stopping_min_delta': [float(nn_config.find('early_stopping_min_delta').text)],
         'optimizer': [nn_config.find('optimizer').text],
         'loss': [nn_config.find('loss').text],
         'epochs': [int(nn_config.find('epochs').text)],

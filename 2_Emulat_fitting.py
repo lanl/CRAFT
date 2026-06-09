@@ -12,7 +12,10 @@ from contextlib import redirect_stdout, redirect_stderr
 import tensorflow as tf
 from config_utils import get_emulator_metadata, get_emulator_settings, get_nn_config
 
+
 def plotout(regr, X_test, y_test, Title, model_type="rf"):
+    ### After a model is fit we will find the shapely importance of the variables and create diagnostic plots.
+
     if model_type == "rf":
         predicty = regr.predict(X_test)
         feature_importance = regr.feature_importances_
@@ -69,21 +72,14 @@ def plotout(regr, X_test, y_test, Title, model_type="rf"):
         featuredf.sort_values(by=['Name'],
                                ascending=False, inplace=True)
         fig = plt.figure(figsize=(10, 5))
-        ##plt.barh(x=shap_importance['col_name'],height=shap_importance['feature_importance_vals'],width=1,align='edge',color='#0072B2')
-        #p#lt.tick_params(axis='y', labelrotation=0)
-        #plt.tick_params(axis='x', labelrotation=90)
-        #plt.title(Title+ " Feature Importance")
 
         sorted_idx = np.argsort(vals.flatten())
         pos = np.arange(sorted_idx.shape[0]) + 0.5
         fig = plt.figure(figsize=(5, 5))
         plt.barh(pos, vals.flatten()[sorted_idx], align="center")
         plt.yticks(pos, np.array(feature_names)[sorted_idx])
-
-        #test_loss, test_accuracy = regr.evaluate(X_test, y_test)
-        #RF_testscore = regr.score(X_test, y_test)
         plt.savefig("diag/"+Title+ " Feature Importance.png", dpi=600, bbox_inches='tight')
-        # For neural network, we don't have feature importance directly
+    
         # Instead, we'll just plot the testing set results
         fig = plt.figure(figsize=(5, 10))
         plt.plot(predicty, y_test, 'ro', alpha=0.2, color="blue")
@@ -93,12 +89,9 @@ def plotout(regr, X_test, y_test, Title, model_type="rf"):
         plt.axline((min(predicty), min(predicty)), slope=1, label="1:1 line", color="red")
         plt.legend()
         plt.savefig("diag/"+Title+ " Testing Set.png", dpi=600, bbox_inches='tight')
-        
-        # Since we don't have feature importance for NN, return an empty dataframe or None
-        #featuredf = pd.DataFrame({"Name":x.columns, "Imp":np.zeros(len(x.columns))})
         return featuredf
 
-def build_nn_model(input_shape, layer_sizes=[64, 32, 1], activation='relu', optimizer='adam', loss='mse'):
+def build_nn_model(input_shape, layer_sizes=[64, 32, 1], activations='relu', dropouts=0, l1=0, l2=0, optimizer='adam', loss='mse'):
     """Build a neural network model with the specified architecture"""
     def clip_above_zero(x):
         return tf.minimum(x, 0.0)
@@ -111,8 +104,23 @@ def build_nn_model(input_shape, layer_sizes=[64, 32, 1], activation='relu', opti
     model.add(tf.keras.layers.Input(shape=(input_shape,)))
     
     # Add hidden layers (all except the last one)
-    for size in layer_sizes[:-1]:
-        model.add(tf.keras.layers.Dense(size, activation=activation))
+    for i, size in enumerate(layer_sizes[:-1]):
+        # Handle activation (could be a list or a single value)
+        act = activations[i] if isinstance(activations, list) else activations
+        
+        # Handle regularization (could be a list or a single value)
+        l1_val = l1[i] if isinstance(l1, list) else l1
+        l2_val = l2[i] if isinstance(l2, list) else l2
+        
+        model.add(tf.keras.layers.Dense(size, activation=act, kernel_regularizer=tf.keras.regularizers.l1_l2(l1=l1_val, l2=l2_val)))
+        
+        # Handle dropout (could be a list or a single value)
+        if isinstance(dropouts, list):
+            drop_val = dropouts[i]
+            if drop_val > 0:
+                model.add(tf.keras.layers.Dropout(drop_val))
+        elif dropouts and dropouts > 0:
+            model.add(tf.keras.layers.Dropout(dropouts))
     
     # Add output layer (no activation for regression tasks)
     model.add(tf.keras.layers.Dense(layer_sizes[-1]))
@@ -144,7 +152,14 @@ def learn(x, y, save, filename, model_type="rf", nn_config=None):
         if nn_config is None:
             nn_config = {
                 'layer_sizes': [64, 32, 1],
-                'activation': 'relu',
+                'activations': ['relu', 'relu'],
+                'dropouts': [0.1, 0.1],
+                'l1_regularization': [0.0, 0.0],
+                'l2_regularization': [0.0, 0.0],
+                'early_stopping_enabled': False,
+                'early_stopping_monitor': 'val_loss',
+                'early_stopping_patience': 10,
+                'early_stopping_min_delta': 0.001,
                 'optimizer': 'adam',
                 'loss': 'mse',
                 'epochs': 5,
@@ -170,16 +185,31 @@ def learn(x, y, save, filename, model_type="rf", nn_config=None):
         regr = build_nn_model(
             input_shape=X_train.shape[1],
             layer_sizes=nn_config['layer_sizes'],
-            activation=nn_config['activation'],
+            activations=nn_config['activations'],
+            dropouts=nn_config['dropouts'],
+            l1=nn_config['l1_regularization'],
+            l2=nn_config['l2_regularization'],
             optimizer=nn_config['optimizer'],
             loss=nn_config['loss']
         )
         
+        # Configure callbacks
+        callbacks = []
+        if nn_config.get('early_stopping_enabled', False):
+            early_stop = tf.keras.callbacks.EarlyStopping(
+                monitor=nn_config.get('early_stopping_monitor', 'val_loss'),
+                patience=nn_config.get('early_stopping_patience', 10),
+                min_delta=nn_config.get('early_stopping_min_delta', 0.001),
+                restore_best_weights=True
+            )
+            callbacks.append(early_stop)
+
         # Train the model
         history = regr.fit(
             train_ds,
             epochs=nn_config['epochs'],
             validation_data=test_ds,
+            callbacks=callbacks,
             verbose=1
         )
         
@@ -204,138 +234,130 @@ def learn(x, y, save, filename, model_type="rf", nn_config=None):
     
     return(X_train, X_test, y_train, y_test, regr)
 
-# Load metadata and settings
-Variables = get_emulator_settings()
-Meta = get_emulator_metadata()
+if __name__ == "__main__":
+    # Load metadata and settings
+    Variables = get_emulator_settings()
+    Meta = get_emulator_metadata()
 
-SaveName = Meta.loc[Meta["Var"]=='SaveName']['Path'].values[0]
-print(SaveName)
-thres = float(Meta.loc[Meta["Var"]=='thres']['Path'].values[0])
-EmulatorDirve = Meta.loc[Meta["Var"]=='EmulatorDrive']['Path'].values[0]
-Fates_sa = Meta.loc[Meta["Var"]=='FATES_samples']['Path']
-Fates_sa = Fates_sa.values[0]
+    SaveName = Meta.loc[Meta["Var"]=='SaveName']['Path'].values[0]
+    print(SaveName)
+    thres = float(Meta.loc[Meta["Var"]=='thres']['Path'].values[0])
+    EmulatorDirve = Meta.loc[Meta["Var"]=='EmulatorDrive']['Path'].values[0]
+    Fates_sa = Meta.loc[Meta["Var"]=='FATES_samples']['Path']
+    Fates_sa = Fates_sa.values[0]
 
-# Check if model_type is specified in metadata
-model_type = "rf"  # default
-if "model_type" in Meta["Var"].values:
-    model_type = Meta.loc[Meta["Var"]=='model_type']['Path'].values[0]
+    # Check if model_type is specified in metadata
+    model_type = "rf"  # default
+    if "model_type" in Meta["Var"].values:
+        model_type = Meta.loc[Meta["Var"]=='model_type']['Path'].values[0]
 
-# Load neural network configuration if specified
-nn_config = None
-if model_type == "nn":
-    try:
-        nn_config_df = get_nn_config()
-        nn_config = nn_config_df.iloc[0].to_dict()
-        
-        # Convert layer_sizes from string to list
-        if isinstance(nn_config['layer_sizes'], str):
-            nn_config['layer_sizes'] = [int(size) for size in nn_config['layer_sizes'].split(',')]
-        
-        print(f"Neural network configuration loaded from XML config")
-    except Exception as e:
-        print(f"Failed to load neural network configuration from XML: {e}")
-        
-        # Fall back to CSV file if specified in metadata
-        #if "nn_config" in Meta["Var"].values:
-        #    nn_config_path = Meta.loc[Meta["Var"]=='nn_config']['Path'].values[0]
-        #    if os.path.exists(nn_config_path):
-        #        nn_config_df = pd.read_csv(nn_config_path)
-        #        nn_config = nn_config_df.iloc[0].to_dict()
-        #        # Convert layer_sizes from string to list if necessary
-        #        if isinstance(nn_config['layer_sizes'], str):
-        #            nn_config['layer_sizes'] = [int(size) for size in nn_config['layer_sizes'].split(',')]
-                
-                # Convert numerical values
-        #        nn_config['batch_size'] = int(nn_config['batch_size'])
-        #        nn_config['epochs'] = int(nn_config['epochs'])
-        #        print(f"Neural network configuration loaded from CSV file")
+    # Load neural network configuration if specified
+    nn_config = None
+    if model_type == "nn":
+        try:
+            nn_config_df = get_nn_config()
+            nn_config = nn_config_df.iloc[0].to_dict()
+            
+            # Convert layer_sizes from string to list
+            if isinstance(nn_config['layer_sizes'], str):
+                nn_config['layer_sizes'] = [int(size) for size in nn_config['layer_sizes'].split(',')]
+            
+            if isinstance(nn_config['activations'], str):
+                nn_config['activations'] = [act.strip() for act in nn_config['activations'].split(',')]
+            
+            if isinstance(nn_config['dropouts'], str):
+                nn_config['dropouts'] = [float(d.strip()) for d in nn_config['dropouts'].split(',')]
+            
+            if isinstance(nn_config['l1_regularization'], str):
+                nn_config['l1_regularization'] = [float(l.strip()) for l in nn_config['l1_regularization'].split(',')]
+            
+            if isinstance(nn_config['l2_regularization'], str):
+                nn_config['l2_regularization'] = [float(l.strip()) for l in nn_config['l2_regularization'].split(',')]
+            
+            print(f"Neural network configuration loaded from XML config")
+        except Exception as e:
+            print(f"Failed to load neural network configuration from XML: {e}")
 
-# Create diagnostic directory if it doesn't exist
-os.makedirs("diag", exist_ok=True)
+    # Create diagnostic directory if it doesn't exist
+    os.makedirs("diag", exist_ok=True)
 
-# Load FATES samples
-FATES_samples = pd.read_csv(Fates_sa)
+    # Load FATES samples
+    FATES_samples = pd.read_csv(Fates_sa)
 
-### Initial full feature importance analysis
-Full = True
-if Full==True:
-    ImportanceDF = pd.DataFrame({})
-    for i in list(range(0,len(Variables["xs"]))):
-        xs = Variables.loc[i,"xs"]
-        xe = Variables.loc[i,"xe"]
-        y_i = Variables.loc[i,"y_i"]
-        var_name = Variables.loc[i,"var_name"]
-        Downsample=Variables.loc[i,"downsample"]
-        Scaler = Variables.loc[i,"Scaler"]
-        GPP = pd.read_csv(EmulatorDirve+Variables.loc[i, 'FATESruns'])
-     #   if var_name in ["LWP_max"]:
-     #       GPP["DOY"] = pd.DatetimeIndex(GPP['Date']).dayofyear
-     #       GPP["Year"] = pd.DatetimeIndex(GPP['Date']).year
-        #print(len(GPP.columns))
-        print("Creating full emulator for")
-
-        GPP.sample(n=int(len(GPP)*Downsample))
-
-        x = GPP.iloc[:,np.r_[xs:xe]] ###here skipping all but the first tminus
-        y = GPP.iloc[:,y_i]*Scaler
-        print(var_name)
-        print("Xstart XEnd Yvariable")
-        print(xs,xe,y_i)
-        X_train, X_test, y_train, y_test, regr = learn(x, y, True, SaveName+var_name, model_type, nn_config)
-        featuredf = plotout(regr, X_test, y_test, var_name, model_type)
-        print("Done")
-        # Only include feature importance for RF models
-        
-        row = pd.DataFrame({'Predicting': var_name,
-                        'Variable': featuredf.loc[featuredf["Imp"]>thres]["Name"].values,
-                        "Importance": featuredf.loc[featuredf["Imp"]>thres]["Imp"].values})
-        ImportanceDF = pd.concat([ImportanceDF, row])
-    
-    # Save importance data if it exists (only for RF)
-    if len(ImportanceDF) > 0:
-        ImportanceDF.to_csv("diag/Full_Importance.csv")
-        NewVars = pd.DataFrame(ImportanceDF["Variable"].unique())
-        NewVars.to_csv("diag/FitOrder.csv")
-    else:
-        # For NN, we don't have feature importance, so create an empty file
-        pd.DataFrame().to_csv("diag/Full_Importance.csv")
-        # Use all columns for reduced model
-        NewVars = pd.DataFrame(x.columns)
-        NewVars.to_csv("diag/FitOrder.csv")
-if thres==0:
-    exit()
-# For the second stage (reduced model), load the fit order from previous stage
-if os.path.exists("diag/FitOrder.csv"):
-     # Random Forest
-        NewVars = pd.read_csv("diag/FitOrder.csv")
-        NewVars = NewVars.iloc[:,1].values
-        print(NewVars)
-        ImportanceDF = pd.DataFrame({}) 
-        for i in list(range(0, len(Variables["xs"]))):
+    ### Initial full feature importance analysis
+    Full = True
+    if Full==True:
+        ImportanceDF = pd.DataFrame({})
+        for i in list(range(0,len(Variables["xs"]))):
+            xs = Variables.loc[i,"xs"]
+            xe = Variables.loc[i,"xe"]
             y_i = Variables.loc[i,"y_i"]
             var_name = Variables.loc[i,"var_name"]
+            Downsample=Variables.loc[i,"downsample"]
             Scaler = Variables.loc[i,"Scaler"]
             GPP = pd.read_csv(EmulatorDirve+Variables.loc[i, 'FATESruns'])
-            #print(GPP.columns)
-            print("Creating an emulator with reduced parameters for")
-            # Make sure all NewVars exist in the dataframe
-            valid_cols = [col for col in NewVars if col in GPP.columns]
-            x = GPP[valid_cols]
-            
-            x = x[valid_cols]
-            y = GPP.iloc[:,y_i]*Scaler
-            #print(x)
-            print(var_name)
-            X_train, X_test, y_train, y_test, regr = learn(x, y, True, SaveName+var_name, model_type, nn_config)
+            print("Creating full emulator for")
 
-            # Only include feature importance for RF models
-            
+            GPP.sample(n=int(len(GPP)*Downsample))
+
+            x = GPP.iloc[:,np.r_[xs:xe]] ###here skipping all but the first tminus
+            y = GPP.iloc[:,y_i]*Scaler
+            print(var_name)
+            print("Xstart XEnd Yvariable")
+            print(xs,xe,y_i)
+            X_train, X_test, y_train, y_test, regr = learn(x, y, True, SaveName+var_name, model_type, nn_config)
             featuredf = plotout(regr, X_test, y_test, var_name, model_type)
+            print("Done")
+      
             row = pd.DataFrame({'Predicting': var_name,
-                        'Variable': featuredf["Name"].values,
-                        "Importance": featuredf["Imp"].values})
+                            'Variable': featuredf.loc[featuredf["Imp"]>thres]["Name"].values,
+                            "Importance": featuredf.loc[featuredf["Imp"]>thres]["Imp"].values})
             ImportanceDF = pd.concat([ImportanceDF, row])
         
         # Save importance data if it exists (only for RF)
         if len(ImportanceDF) > 0:
-            ImportanceDF.to_csv("diag/Reduced_Importance.csv")
+            ImportanceDF.to_csv("diag/Full_Importance.csv")
+            NewVars = pd.DataFrame(ImportanceDF["Variable"].unique())
+            NewVars.to_csv("diag/FitOrder.csv")
+        else:
+            # For NN, we don't have feature importance, so create an empty file
+            pd.DataFrame().to_csv("diag/Full_Importance.csv")
+            # Use all columns for reduced model
+            NewVars = pd.DataFrame(x.columns)
+            NewVars.to_csv("diag/FitOrder.csv")
+    if thres==0:
+        exit()
+    # For the second stage (reduced model), load the fit order from previous stage
+    if os.path.exists("diag/FitOrder.csv"):
+         # Random Forest
+            NewVars = pd.read_csv("diag/FitOrder.csv")
+            NewVars = NewVars.iloc[:,1].values
+            print(NewVars)
+            ImportanceDF = pd.DataFrame({}) 
+            for i in list(range(0, len(Variables["xs"]))):
+                y_i = Variables.loc[i,"y_i"]
+                var_name = Variables.loc[i,"var_name"]
+                Scaler = Variables.loc[i,"Scaler"]
+                GPP = pd.read_csv(EmulatorDirve+Variables.loc[i, 'FATESruns'])
+                #print(GPP.columns)
+                print("Creating an emulator with reduced parameters for")
+                # Make sure all NewVars exist in the dataframe
+                valid_cols = [col for col in NewVars if col in GPP.columns]
+                x = GPP[valid_cols]
+                
+                x = x[valid_cols]
+                y = GPP.iloc[:,y_i]*Scaler
+                #print(x)
+                print(var_name)
+                X_train, X_test, y_train, y_test, regr = learn(x, y, True, SaveName+var_name, model_type, nn_config)
+
+                
+                featuredf = plotout(regr, X_test, y_test, var_name, model_type)
+                row = pd.DataFrame({'Predicting': var_name,
+                            'Variable': featuredf["Name"].values,
+                            "Importance": featuredf["Imp"].values})
+                ImportanceDF = pd.concat([ImportanceDF, row])
+            
+            # Save importance data if it exists 
+            if len(ImportanceDF) > 0:
+                ImportanceDF.to_csv("diag/Reduced_Importance.csv")
